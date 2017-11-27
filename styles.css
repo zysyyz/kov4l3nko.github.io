@@ -1,9 +1,6 @@
 /* Common styles */
-html {
-	background-color: #fff;
-}
 
-body {
+html {
 	font-family: Georgia, serif;
 	max-width: 800px;
 	margin: auto;
