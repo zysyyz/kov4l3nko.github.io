@@ -1,11 +1,12 @@
 /* Common styles */
 
-html {
+body {
 	font-family: Georgia, serif;
 	max-width: 800px;
 	margin: auto;
 	font-size: 17px;
 	padding: 0 5px 5px 5px;
+	-webkit-text-size-adjust: 100%;
 }
 
 a {
@@ -103,10 +104,23 @@ blockquote {
 	margin-bottom: 5px;
 }
 
+.blog-item-date {
+	display: inline-block;
+	width: 105px;
+}
+
+.blog-item-date-small {
+	display: none;
+}
+
+.blog-item {
+	list-style-type: none;
+}
+
 /* Footer styles */
 
 footer {
-	margin-top: 30px;
+	margin-top: 10px;
 	border-top: 1px solid #000;
 	padding: 10px 0 30px 0;
 	font-size: 15px;
@@ -131,6 +145,18 @@ footer {
 	}
 	#blog-menu a {
 		padding: 0 5px 0 5px;
+	}
+	
+	.blog-item-date {
+		display: none;
+	}
+	
+	.blog-item-date-small {
+		display: inline;
+	}
+
+	.blog-item {
+		list-style-type: square;
 	}
 }
 
