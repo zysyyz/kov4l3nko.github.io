@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>@kov4l3nko</title>
+    <link>https://kov4l3nko.github.io/</link>
+    <description>Recent content on @kov4l3nko</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Dima Kovalenko, 2012-2017</copyright>
+    <lastBuildDate>Sat, 11 Nov 2017 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://kov4l3nko.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Bypassing TicketMaster 1.23.0 jailbreak detection</title>
+      <link>https://kov4l3nko.github.io/blog/2017-11-11-tm-jalibreak-check/</link>
+      <pubDate>Sat, 11 Nov 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2017-11-11-tm-jalibreak-check/</guid>
+      <description>In the blog post, we bypass TicketMaster jailbreak detection. It works for TicketMaster 1.23.0 (the laters version in AppStore for Nov 11, 2017). Maybe it will work for future versions as well, but it&amp;rsquo;s not for sure.
+If we start Ticket Master 1.23.0 on a jailbroken iOS device, we see
+Let&amp;rsquo;s bypass it.
+Research Ok, lets do a quick research. Install the app from AppStore and decrypt the app binaries.</description>
+    </item>
+    
+    <item>
+      <title>Error-based image format from Apple</title>
+      <link>https://kov4l3nko.github.io/blog/2016-07-05-error-based-image-format-from-apple/</link>
+      <pubDate>Tue, 05 Jul 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2016-07-05-error-based-image-format-from-apple/</guid>
+      <description>The research is kind of a geek joke for reverse engineers, please don&amp;rsquo;t take it seriously.
+A quick word on Netpbm image formats Netpbm formats are quite old image formats developed in the 1980s. However, the latest Safari browsers (Safari 9.1.1 on Mac and MobileSafari on iOS 9.x) still support them.
+Here is a test example for your browser:
+If you see a small (24x7 pixels) &amp;ldquo;FEEP&amp;rdquo; above, your browser supports Netpbm formats.</description>
+    </item>
+    
+    <item>
+      <title>Disassembling iOS system frameworks and libs with Hopper</title>
+      <link>https://kov4l3nko.github.io/blog/2016-05-13-disassembling-ios-system-frameworks-and-libs/</link>
+      <pubDate>Fri, 13 May 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2016-05-13-disassembling-ios-system-frameworks-and-libs/</guid>
+      <description>This extremely short guide is for iOS 7-9, both ARM32 and 64 bit Apple processors. The things you need to start:
+ Mac with the latest version of Hopper installed a jailbroken iOS device with OpenSSH installed  Let&amp;rsquo;s start. Most of iOS system libs are sticked together in a DYLD shared cache (a big file mapped to a process address space). SSH your iOS device and
+# find / | grep dyld_shared_cache  For example, in iPhone 4 with iOS 7, you can find the DYLD shared cache here</description>
+    </item>
+    
+    <item>
+      <title>Debugging iOS binaries with LLDB</title>
+      <link>https://kov4l3nko.github.io/blog/2016-04-27-debugging-ios-binaries-with-lldb/</link>
+      <pubDate>Wed, 27 Apr 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2016-04-27-debugging-ios-binaries-with-lldb/</guid>
+      <description>This is an extended version of the guide I posted in 2014. It covers iOS 7-9 for ARM32 and 64 bit processors. Please note that LLDB is quite buggy, so some things may not work for you, or work in a wrong way. Shit happens, sorry.
+Preparing the sandbox Environment You need:
+ Mac with the latest XCode installed a jailbroken iPhone/iPad/iPod with OpenSSH installed MachOView installed on the Mac  Excracting debugserver Extract debugserver from XCode.</description>
+    </item>
+    
+    <item>
+      <title>Bypassing an anti-debug protection in Musical.ly 4.7.2 for iOS</title>
+      <link>https://kov4l3nko.github.io/blog/2016-03-07-bypassing-anti-debug-musically-for-ios/</link>
+      <pubDate>Mon, 07 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2016-03-07-bypassing-anti-debug-musically-for-ios/</guid>
+      <description>Today we disable anti-debug protection in Musical.ly 4.7.2 for iOS.
+Segmentation fault: 11 I installed the musical.ly app from AppStore on my jailbroken iPhone 4 to take a quick look on the app under debugger. I tried to attach debugserver to a running process and got
+iPhone:~ root# debugserver *:6666 -a Musical.ly debugserver-310.2 for armv7. Attaching to process Musical.ly... Segmentation fault: 11  So the app used some anti-debugging techniques.</description>
+    </item>
+    
+    <item>
+      <title>Decrypting apps from AppStore</title>
+      <link>https://kov4l3nko.github.io/blog/2016-03-01-decrypting-apps-from-appstore/</link>
+      <pubDate>Tue, 01 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2016-03-01-decrypting-apps-from-appstore/</guid>
+      <description>Another &amp;ldquo;ultimate&amp;rdquo; guide (he-he :)) to decrypting iOS applications from AppStore. It&amp;rsquo;s based on my 2 years experience. I hope somebody finds it useful. Questions are welcome in comments.
+The sandbox  Mac with the latest OS X installed MachOView 2.4 (9200) installed on the Mac a jailbroken iOS device with OpenSSH LLDB installed on the iPhone  Preparations Install the app you want to disassemble, e.g. Samsung Content Viewer, to a jailbroken iOS device and start it.</description>
+    </item>
+    
+    <item>
+      <title>Breakpoint callbacks in LLDB Python scripts</title>
+      <link>https://kov4l3nko.github.io/blog/2015-08-14-breakpoint-callbacks-in-python-lldb-scripting/</link>
+      <pubDate>Fri, 14 Aug 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2015-08-14-breakpoint-callbacks-in-python-lldb-scripting/</guid>
+      <description>Today we talk about breakpoint callbacks in LLDB Python scripts.Setting breakpoints is easy. For example, write the Python script:
+# This is test.py import lldb def test(debugger, command, result, internal_dict): &amp;quot;&amp;quot;&amp;quot; Just a test command to set a breakpoint &amp;quot;&amp;quot;&amp;quot; target = debugger.GetSelectedTarget() breakpoint = target.BreakpointCreateByName(&amp;quot;SSLWrite&amp;quot;) def __lldb_init_module(debugger, internal_dict): debugger.HandleCommand(&#39;command script add -f test.test test&#39;)  The scripts implements a command test. The command sets a breakpoint on SSLWrite.
+Name the file test.</description>
+    </item>
+    
+    <item>
+      <title>Two simple tricks to hide your Android application</title>
+      <link>https://kov4l3nko.github.io/blog/2015-04-19-two-simple-tricks-to-hide-your-android-application/</link>
+      <pubDate>Sun, 19 Apr 2015 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2015-04-19-two-simple-tricks-to-hide-your-android-application/</guid>
+      <description>Reversing Android malware, I see the same technical tricks in almost every malicious code. In this article, I describe two simple tricks used by numerous Android malware makers to hide their malware applications.
+Create an application Lets download the latest version of Android SDK with Android Studio, install it and add some SDK packages (if Android Studio is already installed on your PC, just skip this step). Then start Android Studio and use its startup wizard to create an app:</description>
+    </item>
+    
+    <item>
+      <title>About EncryptedPasswd</title>
+      <link>https://kov4l3nko.github.io/blog/2014-06-09-about-encryptedpasswd/</link>
+      <pubDate>Mon, 09 Jun 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2014-06-09-about-encryptedpasswd/</guid>
+      <description>Just a quick word about EncryptedPasswd parameter.Sniffing traffic between an Android device and Google Play, one can see that login to Google Play is just a POST request like this:
+POST /auth HTTP/1.1 Content-Type: application/x-www-form-urlencoded Content-Length: 404 Host: android.clients.google.com Connection: Keep-Alive User-Agent: GoogleLoginService/1.3 (a10 JZO54K) accountType=HOSTED_OR_GOOGLE&amp;amp;Email=testemail%40gmail.com&amp;amp;has_permission=1&amp;amp;add_account=1&amp;amp;EncryptedPasswd=AFcb4KS9WAU3NI_-jdMDSueqT-oO1-WN2B9pxB-te_Elx3MElC9B2TgAaWqkY7kiQSnGFEwaY1KVkizxadGsRnFnHa7vlRCrB4Me1XnHBuOz9oi48eBcm0rC7r8QaC_GPp1YPI8OFa0fZU_dTJypganc2tREsgE-_TJQSKWkA7zSWnsq8g%3D%3D&amp;amp;service=ac2dm&amp;amp;source=android&amp;amp;androidId=378b05ab23e0e8e9&amp;amp;device_country=ua&amp;amp;operatorCountry=ua&amp;amp;lang=en&amp;amp;sdk_version=16  The request headers and parameters are more or less clear, except EncryptedPasswd parameter. Google search gives nothing useful, Chinese RCE forums contain no information about the parameter, even Adam Goodman did not explain the parameter in his great research on bypassing Google&amp;rsquo;s two-factor authentication.</description>
+    </item>
+    
+    <item>
+      <title>CVE-2014-1354: how to find a critical bug in iOS</title>
+      <link>https://kov4l3nko.github.io/blog/2014-03-28-how-to-find-a-critical-bug-in-ios/</link>
+      <pubDate>Fri, 28 Mar 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2014-03-28-how-to-find-a-critical-bug-in-ios/</guid>
+      <description>In this article we will find a critical bug in iOS Core Graphics. It will be a true old-style manual research; we will not use any automatic vulnerability scanners, code analysers, symbolic execution tools etc.
+Finding a bug We will use the following &amp;ldquo;sandbox&amp;rdquo;:
+ iPhone 4 iOS 7.0.4 with evasi0n jailbreak LLDB + debugserver  We will test Mobile Safari. We are going to do the following:
+ Choose an ancient multimedia file formal which is not used anymore but still supported by Mobile Safari.</description>
+    </item>
+    
+    <item>
+      <title>Installing LLDB</title>
+      <link>https://kov4l3nko.github.io/blog/2014-02-14-installing-lldb/</link>
+      <pubDate>Fri, 14 Feb 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2014-02-14-installing-lldb/</guid>
+      <description>Warning! At the moment, the guide is obsolete. It makes sense to read the updated and extended version of this guide.
+Today we will talk about installation of LLDB (on Mac OS) and debugserver (on iOS 7.0-7.0.4).
+Installation You need LLDB installed on your Mac and the debugserver installed on your iOS device. To install LLDB on your Mac, just install the latest version of XCode. To install the debugserver on iOS device, mount DeveloperDiskImage.</description>
+    </item>
+    
+    <item>
+      <title>How to build android-apktool 2.00 (beta) from sources</title>
+      <link>https://kov4l3nko.github.io/blog/2014-01-12-how-to-build-android-apktool-2-00-beta-from-sources/</link>
+      <pubDate>Sun, 12 Jan 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2014-01-12-how-to-build-android-apktool-2-00-beta-from-sources/</guid>
+      <description>Android-apktool 2.00 promises a lot of cool things: Smali/Backsmali 2.0, Smali debugging (last time we saw this great feature in android-apktool 1.4.1, it broke in 1.4.2 and later releases, and now it&amp;rsquo;s back!), numerous bugfixes etc. The only problem is the version 2.00 is not released at the moment.It&amp;rsquo;s still in beta, no compiled JARs are available on the download page:
+So this post is for reverse engineers who want to build android-apktool of version 2.</description>
+    </item>
+    
+    <item>
+      <title>User-defined GDB commands on iOS</title>
+      <link>https://kov4l3nko.github.io/blog/2014-01-09-user-defined-gdb-commands-on-ios/</link>
+      <pubDate>Thu, 09 Jan 2014 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2014-01-09-user-defined-gdb-commands-on-ios/</guid>
+      <description>In this post we will discuss user-defined GDB commands on iOS. We will talk about some really simple things and play with &amp;ldquo;toy&amp;rdquo; examples. Hovewer, it is assumed that the reader is not a 100% noob. He (or she) should be familiar GDB on iOS and should has basic knowledge of Objective C runtime (all that classes, class instances, properties&amp;hellip; well, you know :)).
+All examples were tested for GDB 6.</description>
+    </item>
+    
+    <item>
+      <title>How to prepare iPhone 4 with iOS 6.1.x for reverse engineering tasks</title>
+      <link>https://kov4l3nko.github.io/blog/2013-12-01-how-to-prepare-iphone-4-with-ios-6-1-x-for-reverse-engineering-tasks/</link>
+      <pubDate>Sun, 01 Dec 2013 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2013-12-01-how-to-prepare-iphone-4-with-ios-6-1-x-for-reverse-engineering-tasks/</guid>
+      <description>Here is an extremely detailed step-by-step instruction for a jailbroken iPhone 4 with iOS 6.1.x and Cydia installed. It will be useful for beginners, not for advanced reverse engineers.
+Step 1. OpenSSH First of all, install OpenSSH. On the iPhone, run Cydia and tap &amp;ldquo;OpenSSH Access How-To&amp;rdquo;:
+Tap the &amp;ldquo;OpenSSH&amp;rdquo; link:
+Tap &amp;ldquo;Install&amp;rdquo;
+and &amp;ldquo;Confirm&amp;rdquo;:
+Wait until installation is completed and tap &amp;ldquo;Return to Cydia&amp;rdquo;:
+Now OpenSSH is installed. On the iPhone, open &amp;ldquo;Settings&amp;rdquo; → &amp;ldquo;Wi-Fi&amp;rdquo; and connect the iPhone to a Wi-Fi network (if it is not connected yet).</description>
+    </item>
+    
+    <item>
+      <title>Twitter is watching you, anonymous</title>
+      <link>https://kov4l3nko.github.io/blog/2013-11-29-twitter-is-watching-you-anonymous/</link>
+      <pubDate>Fri, 29 Nov 2013 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2013-11-29-twitter-is-watching-you-anonymous/</guid>
+      <description>Reversing the official Twitter client 5.13.1 for iOS, I found that it sends some very strange requests to a server. I used a custom GDB script to dump [NSURLConnection] right before it invokes [start]. It allowed me to see a HTTPS traffic between the Twitter client and server.
+In addition to a usual traffic (registration, authorization, tweeting etc), I often saw POST requests to https://api.twitter.com/1.1/jot/client_event. The requests looked like
+The Twitter client sent such requests after almost any action.</description>
+    </item>
+    
+    <item>
+      <title>Breakpoints in Smali code</title>
+      <link>https://kov4l3nko.github.io/blog/2012-08-30-breakpoints-in-smali-code/</link>
+      <pubDate>Thu, 30 Aug 2012 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2012-08-30-breakpoints-in-smali-code/</guid>
+      <description>In my previous posts I wrote a step-by-step instruction how to debug Smali code with Apktool and NetBeans. However, there were no details about breakpoints, just a short note in steps 12 and 13
+ 12.&amp;nbsp;Set a breakpoint. You must select line with some instruction, you can&amp;rsquo;t set breakpoint on lines starting with ., : or #.
+13.&amp;nbsp;Trigger some action in application. If you run at the breakpoint, then the thread should stop and you will be able to debug it step by step, watch variables, etc.</description>
+    </item>
+    
+    <item>
+      <title>Debugging Smali code with apk-tool and NetBeans</title>
+      <link>https://kov4l3nko.github.io/blog/2012-08-27-debugging-smali-code-with-apk-tool-and-netbeans/</link>
+      <pubDate>Mon, 27 Aug 2012 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2012-08-27-debugging-smali-code-with-apk-tool-and-netbeans/</guid>
+      <description>Ho-ho-ho, it works now! Here is a (more or less detailed) instruction to debug a Smali code of a third-part Android application. To debug Smali code with apk-tool, you need
+ Apk-tool 1.4.1 and NetBeans 6.8. Use these versions, not the latest ones! Currently, the latest versions of apk-tool and NetBeans do not allow to debug Smali code.
+ Java, JDK and other stuff installed in your system to make Apk-tool and NetBeans working</description>
+    </item>
+    
+    <item>
+      <title>About</title>
+      <link>https://kov4l3nko.github.io/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/about/</guid>
+      <description>My contacts:
+ Email: kov4l3nko@gmail.com Twitter: @kov4l3nko GitHub: https://github.com/kov4l3nko  From time to time I do researches for money, but there are some rules:
+ no illegal researches no researches for Iran, Sudan, Syria, North Korea and Russia no security researches for China (non-security researches are allowed)  </description>
+    </item>
+    
+  </channel>
+</rss>

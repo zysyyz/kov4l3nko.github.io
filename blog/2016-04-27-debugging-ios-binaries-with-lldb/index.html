@@ -1,0 +1,582 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Debugging iOS binaries with LLDB - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Debugging iOS binaries with LLDB</h1>
+		<div class="post-date">Apr 27, 2016</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#preparing-the-sandbox">Preparing the sandbox</a>
+<ul>
+<li><a href="#environment">Environment</a></li>
+<li><a href="#excracting-debugserver">Excracting <code>debugserver</code></a></li>
+<li><a href="#signing-debugserver">Signing <code>debugserver</code></a></li>
+<li><a href="#copying-debugserver-to-ios-device">Copying <code>debugserver</code> to iOS device</a></li>
+<li><a href="#first-start">First start</a></li>
+<li><a href="#problems-and-solutions">Problems and solutions</a>
+<ul>
+<li><a href="#debugserver-does-not-start"><code>debugserver</code> does not start</a></li>
+<li><a href="#lldb-shows-the-sdk-path-error"><code>lldb</code> shows the SDK Path error</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#using-lldbinit">Using <code>.lldbinit</code></a></li>
+<li><a href="#debugging-through-usb">Debugging through USB</a></li>
+<li><a href="#starting-debugging">Starting debugging</a>
+<ul>
+<li><a href="#attaching-to-a-running-process">Attaching to a running process</a></li>
+<li><a href="#waiting-for-a-process">Waiting for a process</a></li>
+<li><a href="#run-a-binary-under-lldb">Run a binary under LLDB</a></li>
+</ul></li>
+<li><a href="#aslr">ASLR</a>
+<ul>
+<li><a href="#calculating-aslr-shift-by-sections-offset-in-memory">Calculating ASLR shift by sections offset in memory</a></li>
+<li><a href="#removing-aslr">Removing ASLR</a></li>
+</ul></li>
+<li><a href="#using-a-decrypted-binary">Using a decrypted binary</a></li>
+</ul>
+</nav>
+		
+		
+
+<p>This is an extended version of <a href="../2014-02-14-installing-lldb/">the guide I posted in 2014</a>. It covers iOS 7-9 for ARM32 and 64 bit processors. Please note that LLDB is quite buggy, so some things may not work for you, or work in a wrong way. Shit happens, sorry.</p>
+
+<h1 id="preparing-the-sandbox">Preparing the sandbox</h1>
+
+<h2 id="environment">Environment</h2>
+
+<p>You need:</p>
+
+<ol>
+<li>Mac with the latest XCode installed</li>
+<li>a jailbroken iPhone/iPad/iPod with OpenSSH installed</li>
+<li><a href="https://sourceforge.net/projects/machoview/">MachOView</a> installed on the Mac</li>
+</ol>
+
+<h2 id="excracting-debugserver">Excracting <code>debugserver</code></h2>
+
+<p>Extract <code>debugserver</code> from XCode. On Mac, run in console:</p>
+
+<pre><code>$ ls /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/
+</code></pre>
+
+<p>As result, you see available iOS versions in your console, e.g.</p>
+
+<pre><code>6.0   7.0   8.0   8.2   8.4   9.1
+6.1   7.1   8.1   8.3   9.0   9.2 (13C75)
+</code></pre>
+
+<p>Choose the iOS version running on your iOS device. Let it be <code>7.1</code>. Extract <code>debugserver</code> for iOS 7.1:</p>
+
+<pre><code>$ hdiutil attach /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/7.1/DeveloperDiskImage.dmg
+$ cp /Volumes/DeveloperDiskImage/usr/bin/debugserver ./
+</code></pre>
+
+<p><strong>Note!</strong> <code>debugserver</code> is so-called &ldquo;universal binary&rdquo; with MachO fat header, it contains both ARM32 and ARM64 binaries, so don&rsquo;t care bitwise. ■</p>
+
+<p>Now you have <code>debugserver</code> binary in your current directory on your Mac.</p>
+
+<h2 id="signing-debugserver">Signing <code>debugserver</code></h2>
+
+<p>Sign <code>debugserver</code> with the following command</p>
+
+<pre><code>$ codesign -s - --entitlements entitlements.plist -f debugserver
+</code></pre>
+
+<p>where <code>entitlements.plist</code> is a text file:</p>
+
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/ PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+	&lt;key&gt;com.apple.springboard.debugapplications&lt;/key&gt; &lt;true/&gt;
+	&lt;key&gt;run-unsigned-code&lt;/key&gt; &lt;true/&gt;
+	&lt;key&gt;get-task-allow&lt;/key&gt; &lt;true/&gt;
+	&lt;key&gt;task_for_pid-allow&lt;/key&gt; &lt;true/&gt;
+&lt;/dict&gt; 
+&lt;/plist&gt;
+</code></pre>
+
+<p>You can download <code>entitlements.plist</code> <a href="entitlements.plist">here</a>.</p>
+
+<h2 id="copying-debugserver-to-ios-device">Copying <code>debugserver</code> to iOS device</h2>
+
+<p>Find IP of your iOS device, e.g. <code>192.168.0.101</code>. Copy <code>debugserver</code> to your iOS device:</p>
+
+<pre><code>$ scp ./debugserver root@192.168.0.101:/usr/bin/
+</code></pre>
+
+<p>If you use <code>usbmuxd</code> (see &ldquo;Debugging through USB&rdquo; for more info), you can run</p>
+
+<pre><code>$ scp -P 2222 ./debugserver root@localhost:/usr/bin/
+</code></pre>
+
+<h2 id="first-start">First start</h2>
+
+<p>Start &ldquo;Settings&rdquo; on your iOS device. SSH your the device and run in SSH console:</p>
+
+<pre><code># ps ax
+</code></pre>
+
+<p>As result, you see the list of running process. Check &ldquo;Settings&rdquo;, it should appear in the list as <code>Preferences</code>. Attach <code>debugserver</code> to the process:</p>
+
+<pre><code># debugserver *:6666 -a Preferences
+</code></pre>
+
+<p>As result, you see in SSH console:</p>
+
+<pre><code>debugserver-310.2 for armv7.
+Attaching to process Preferences...
+Listening to port 6666 for a connection from *...
+</code></pre>
+
+<p>Now, open a new Mac console and run</p>
+
+<pre><code>$ lldb
+(lldb) platform select remote-ios
+(lldb) process connect connect://192.168.0.101:6666
+</code></pre>
+
+<p>(we still assume iOS device IP is <code>192.168.0.101</code>)</p>
+
+<p>Wait 1-2 min and, finally, you&rsquo;ll get the result</p>
+
+<pre><code>Process 400 stopped
+* thread #1: tid = 0x118f, 0x38bfda58 libsystem_kernel.dylib`mach_msg_trap + 20, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+    frame #0: 0x38bfda58 libsystem_kernel.dylib`mach_msg_trap + 20
+libsystem_kernel.dylib`mach_msg_trap:
+-&gt;  0x38bfda58 &lt;+20&gt;: pop    {r4, r5, r6, r8}
+    0x38bfda5c &lt;+24&gt;: bx     lr
+
+libsystem_kernel.dylib`mach_msg_overwrite_trap:
+    0x38bfda60 &lt;+0&gt;:  mov    r12, sp
+    0x38bfda64 &lt;+4&gt;:  push   {r4, r5, r6, r8}
+</code></pre>
+
+<h2 id="problems-and-solutions">Problems and solutions</h2>
+
+<h3 id="debugserver-does-not-start"><code>debugserver</code> does not start</h3>
+
+<p>Check permissions for <code>debugserver</code> on iOS device. The correct permissions are</p>
+
+<pre><code>-rwxr-xr-x 1 root wheel 1100912 Feb 13 15:30 /usr/bin/debugserver
+</code></pre>
+
+<h3 id="lldb-shows-the-sdk-path-error"><code>lldb</code> shows the SDK Path error</h3>
+
+<p>In LLDB console, you can see &ldquo;SDK Path: error: unable to locate SDK&rdquo; message</p>
+
+<pre><code>(lldb) platform select remote-ios
+  Platform: remote-ios
+ Connected: no
+  SDK Path: error: unable to locate SDK
+</code></pre>
+
+<p>because</p>
+
+<pre><code>~/Library/Developer/Xcode/iOS DeviceSupport/
+</code></pre>
+
+<p>does not exist. Or, your device is running iOS 9.0.2 (13A452), but you see no iOS 9.0.2 (13A452) in the SDK Roots list</p>
+
+<pre><code>(lldb) platform select remote-ios
+  Platform: remote-ios
+ Connected: no
+  SDK Path: &quot;/Users/administrator/Library/Developer/Xcode/iOS DeviceSupport/9.0.2 (13A452)&quot;
+ SDK Roots: [ 0] &quot;/Users/administrator/Library/Developer/Xcode/iOS DeviceSupport/7.1.2 (11D257)&quot;
+</code></pre>
+
+<p>because</p>
+
+<pre><code>~/Library/Developer/Xcode/iOS DeviceSupport/9.0.2 (13A452)
+</code></pre>
+
+<p>does not exists.</p>
+
+<p>In both cases, you need to</p>
+
+<ol>
+<li>run XCode</li>
+<li>open &ldquo;Windows&rdquo; → &ldquo;Devices&rdquo;</li>
+<li>connect your iOS device to your Mac (via USB)</li>
+<li>if iOS device is not paired to the Mac, skip this step; if it is paired, unpair it the &ldquo;Devices&rdquo; window (open context menu on the device and choose &ldquo;Unpair&rdquo;)</li>
+<li>pair the iOS device and wait while XCode is extracting symbols:</li>
+</ol>
+
+<p><img src="xcode-devices.png" alt="" /></p>
+
+<p>As resul, <code>platform select remote-ios</code> should work as expected and give you something like</p>
+
+<pre><code>(lldb) platform select remote-ios
+  Platform: remote-ios
+ Connected: no
+  SDK Path: &quot;/Users/administrator/Library/Developer/Xcode/iOS DeviceSupport/9.0.2 (13A452)&quot;
+ SDK Roots: [ 0] &quot;/Users/administrator/Library/Developer/Xcode/iOS DeviceSupport/7.1.2 (11D257)&quot;
+ SDK Roots: [ 1] &quot;/Users/administrator/Library/Developer/Xcode/iOS DeviceSupport/9.0.2 (13A452)&quot;
+</code></pre>
+
+<h1 id="using-lldbinit">Using <code>.lldbinit</code></h1>
+
+<p>Typing</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://...blah-blah-blah
+</code></pre>
+
+<p>in console each time your start <code>lldb</code> is annoying. Put the LLDB commands you run each time you start LLDB in <code>~/.lldbinit</code> file and the commands will be executed automatically. For example</p>
+
+<pre><code># .lldbinit example
+platform select remote-ios
+process connect connect://192.168.0.101:6666
+</code></pre>
+
+<p>In further sections, you can find several examples of useful <code>.lldbinit</code> files.</p>
+
+<h1 id="debugging-through-usb">Debugging through USB</h1>
+
+<p>To debug binaries and access iOS device via SSH through USB, follow the instruction:</p>
+
+<ol>
+<li><p>If <code>usbmuxd</code> is not installed on your Mac, install it. Run in Mac console:</p>
+
+<pre><code>$ brew install usbmuxd
+</code></pre>
+
+<p>(if you have no <code>brew</code> installed on your Mac, find the installation instruction on <a href="http://brew.sh/">homebrew page</a>)</p></li>
+
+<li><p>Open a dedicated console on your Mac, and execute</p>
+
+<pre><code>$ iproxy 6666 6666
+</code></pre>
+
+<p>Now, you can connect iOS device to USB port and use</p>
+
+<pre><code>(lldb) process connect connect://localhost:6666
+</code></pre>
+
+<p>instead of</p>
+
+<pre><code>(lldb) process connect connect://192.168.0.101:6666
+</code></pre>
+
+<p>in LLDB console.</p></li>
+
+<li><p>Open a dedicated console on your Mac, and execute</p>
+
+<pre><code>$ iproxy 2222 22
+</code></pre>
+
+<p>Now, you can connect iOS device to USB port and use</p>
+
+<pre><code>$ ssh -p 2222 root@localhost
+</code></pre>
+
+<p>instead of</p>
+
+<pre><code>$ ssh root@192.168.0.101
+</code></pre>
+
+<p>in Mac console.</p></li>
+</ol>
+
+<p>Debugging and SSH-ing iOS devices through USB are faster and much more stable than debugging and SSH-ing through network.</p>
+
+<p>Here is an example of <code>.lldbinit</code>, it uses <code>usbmuxd</code>:</p>
+
+<pre><code># another .lldbinit example
+platform select remote-ios
+process connect connect://localhost:6666
+</code></pre>
+
+<h1 id="starting-debugging">Starting debugging</h1>
+
+<p>There are several ways to start debugging.</p>
+
+<h2 id="attaching-to-a-running-process">Attaching to a running process</h2>
+
+<p>SSH your jailbroken iOS device, run <code>ps -ax</code> to list running processes. Let you need to attach to iMessage GUI process:</p>
+
+<pre><code># ps -ax 
+  PID TTY           TIME CMD
+    ...
+ 2953 ??         0:02.27 /Applications/MobileSMS.app/MobileSMS
+    ...
+</code></pre>
+
+<p>To attach <code>debugserver</code> to the process, use the PID
+​</p>
+
+<pre><code># debugserver *:6666 -a 2953
+</code></pre>
+
+<p>or the process name
+​</p>
+
+<pre><code># debugserver *:6666 -a MobileSMS
+</code></pre>
+
+<p>Then run LLDB on your Mac and connect <code>debugserver</code> via network</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://192.168.0.101:6666
+</code></pre>
+
+<p>or USB</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://localhost:6666
+</code></pre>
+
+<p>(see &ldquo;First start&rdquo; and &ldquo;Debugging through USB&rdquo; above for details)</p>
+
+<p>Now it&rsquo;s ready for debugging.</p>
+
+<h2 id="waiting-for-a-process">Waiting for a process</h2>
+
+<p>Make sure the app you want to debug is not running. Let you need to debug iMessage GUI (the <code>/Applications/MobileSMS.app/MobileSMS</code> executable). SSH your jailbroken iOS device and run in the SSH console</p>
+
+<pre><code># debugserver *:6666 -waitfor MobileSMS
+</code></pre>
+
+<p>Run the iMessage GUI manually (just tap its icon in the iOS device), then run LLDB on your Mac and connect <code>debugserver</code> via network</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://192.168.0.101:6666
+</code></pre>
+
+<p>or USB</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://localhost:6666
+</code></pre>
+
+<p>(see &ldquo;First start&rdquo; and &ldquo;Debugging through USB&rdquo; above for details)</p>
+
+<p>Now it&rsquo;s ready for debugging.</p>
+
+<h2 id="run-a-binary-under-lldb">Run a binary under LLDB</h2>
+
+<p>Make sure the app you want to debug is not running. Let you need to debug iMessage GUI (the <code>/Applications/MobileSMS.app/MobileSMS</code> executable). SSH your jailbroken iOS device and</p>
+
+<pre><code># debugserver *:6666 -x backboard /Applications/MobileSMS.app/MobileSMS
+</code></pre>
+
+<p>The <code>-x</code> parameter can be one of:</p>
+
+<ul>
+<li><code>auto</code>: Auto-detect the best launch method to use.</li>
+<li><code>fork</code>: Launch program using <code>fork()</code> and <code>exec()</code>.</li>
+<li><code>posix</code>: Launch program using <code>posix_spawn()</code>.</li>
+<li><code>backboard</code>: Launch program via BackBoard Services.</li>
+</ul>
+
+<p><strong>Note!</strong> Always use <code>backboard</code> to start iOS GUI applications! ■</p>
+
+<p>Run LLDB on your Mac and connect <code>debugserver</code> via network</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://192.168.0.101:6666
+</code></pre>
+
+<p>or USB</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) process connect connect://localhost:6666
+</code></pre>
+
+<p>(see &ldquo;First start&rdquo; and &ldquo;Debugging through USB&rdquo; above for details)</p>
+
+<p>The debugger stops the process at the very beginning: images are not loaded yet</p>
+
+<p><img src="lldb-no-images-loaded-yet.png" alt="" /></p>
+
+<p>Use the following commands to load all images:</p>
+
+<pre><code>(lldb) settings set target.process.stop-on-sharedlibrary-events 1
+(lldb) c
+(lldb) settings set target.process.stop-on-sharedlibrary-events 0
+</code></pre>
+
+<p>Now it&rsquo;s ready for debugging.</p>
+
+<p><strong>Note!</strong> One can add the commands to <code>.lldbinit</code>, but sometimes it does not work by unknown reasons. ■</p>
+
+<h1 id="aslr">ASLR</h1>
+
+<p>ASLR makes debugging a bit tricky, e.g. if you set breakpoints in an app by addresses, you need to re-calculate the addresses each time you start the app.</p>
+
+<h2 id="calculating-aslr-shift-by-sections-offset-in-memory">Calculating ASLR shift by sections offset in memory</h2>
+
+<p>In LLDB, run</p>
+
+<pre><code>(lldb) image dump sections &lt;Image Name&gt;
+</code></pre>
+
+<p>Then look at the output and calculate ASLR shift as</p>
+
+<pre><code>&lt;start __TEXT address&gt; - &lt;end __PAGEZERO address&gt;
+</code></pre>
+
+<p>E.g. for Viber</p>
+
+<p><img src="viber-image-section-dump.png" alt="" /></p>
+
+<p>we have</p>
+
+<pre><code>(lldb) p/x 0x0000000100058000-0x0000000100000000
+(long) $6 = 0x0000000000058000
+</code></pre>
+
+<p>Here <code>0x0000000000058000</code> is the ASLR shift. So, if a disassembler says the Viber&rsquo;s entry point is</p>
+
+<pre><code>                       EntryPoint:
+0x0000000100033098         stp        x24, x23, [sp, #-0x40]!
+0x000000010003309c         stp        x22, x21, [sp, #0x10]
+0x00000001000330a0         stp        x20, x19, [sp, #0x20]
+0x00000001000330a4         stp        x29, x30, [sp, #0x30]
+0x00000001000330a8         add        x29, sp, #0x30
+0x00000001000330ac         sub        sp, sp, #0x30
+0x00000001000330b0         mov        x20, x1
+0x00000001000330b4         mov        x21, x0
+0x00000001000330b8         bl         sub_100c71054
+...
+</code></pre>
+
+<p>then you can find it in a debugger as well (just add the ASLR shift):</p>
+
+<pre><code>(lldb) dis -s 0x0000000100033098+0x0000000000058000 -c 9
+Viber`___lldb_unnamed_function744$$Viber:
+    0x10008b098 &lt;+0&gt;:  stp    x24, x23, [sp, #-64]!
+    0x10008b09c &lt;+4&gt;:  stp    x22, x21, [sp, #16]
+    0x10008b0a0 &lt;+8&gt;:  stp    x20, x19, [sp, #32]
+    0x10008b0a4 &lt;+12&gt;: stp    x29, x30, [sp, #48]
+    0x10008b0a8 &lt;+16&gt;: add    x29, sp, #48              ; =48 
+    0x10008b0ac &lt;+20&gt;: sub    sp, sp, #48               ; =48 
+    0x10008b0b0 &lt;+24&gt;: mov    x20, x1
+    0x10008b0b4 &lt;+28&gt;: mov    x21, x0
+    0x10008b0b8 &lt;+32&gt;: bl     0x100cc9054               ; ___lldb_unnamed_function62141$$Viber
+</code></pre>
+
+<h2 id="removing-aslr">Removing ASLR</h2>
+
+<p><strong>Warning!</strong> This method can&rsquo;t be applied to any jailbroken device. It is not clear why, but some jailbroken devices do not start altered binaries (it&rsquo;s mostly about apps from AppStore). E.g. my iPhone 4 with iOS 7 runs patched binaries, my iPad mini 2 with iOS 9 does not. I did not dig that, it looks like it depends on a jailbreak. ■</p>
+
+<p>There are several steps:</p>
+
+<ol>
+<li><p>Copy a binary, e.g. the ABSD daemon&rsquo;s <code>/usr/sbin/absd</code>, from your iOS device to your Mac (use SSH, e.g. <code>scp</code> command).</p></li>
+
+<li><p>Then dump the binaries&rsquo;s entitlements to <code>absd.entitlements</code>:</p>
+
+<pre><code>$ codesign -d --entitlements - absd &gt; absd.entitlements
+</code></pre></li>
+
+<li><p>Open the binary in MachOView and look at the mach header of the architecture you want to debug. In our screenshot it&rsquo;s ARMv7: <img src="mach-o-mh-pie.png" alt="" /></p></li>
+
+<li><p>Remove the <code>MH_PIE</code> flag. Edit the data right in MachOView or open the binary in your favorite hex editor, go to the offset, and remove the flag.</p></li>
+
+<li><p>Then re-sign the binary:</p>
+
+<pre><code>$ codesign -s - --entitlements absd.entitlements -f absd
+</code></pre></li>
+
+<li><p>Copy the re-signed binary back to the iOS device. Replace the original binary with the re-signed one.</p></li>
+</ol>
+
+<p>Now do something to start the <code>absd</code> daemon (e.g. logout/login in iMessage), attach LLDB to the <code>absd</code> process and look at the executable&rsquo;s image in memory:</p>
+
+<p><img src="absd-no-aslr.png" alt="" /></p>
+
+<p><strong>Warning!</strong> If something goes wrong, e.g. the modified binary does not start, then try to follow the instruction above, but skip re-singing the binary! Sometimes it works. ■</p>
+
+<p><strong>Warning!</strong> Sometimes, a modified binary (without ASLR) won&rsquo;t start after device reboot. To solve this solution, copy the original (unmodified) binary to it&rsquo;s original place on the device, start it once, then kill the process. Finally, replace the original binary with the modified one, and start the modified one. Now the modified binary should start normally. ■</p>
+
+<h1 id="using-a-decrypted-binary">Using a decrypted binary</h1>
+
+<p>As soon as LLDB connects a debug server, LLDB tries to analyze the binary&rsquo;s image in memory (that&rsquo;s why you should wait min or two after <code>process connect connect://...</code> command in LLDB console). You can make the analysis easy. Just follow the instruction:</p>
+
+<ol>
+<li><p><a href="../2016-03-01-decrypting-apps-from-appstore/">Decrypt the binary</a> if it is an app from AppStore</p></li>
+
+<li><p>Remove ASLR (see the prev. section for instructions)</p></li>
+
+<li><p>After you decrypted the binary and removed ASLR, store the binary somewhere on your Mac</p></li>
+
+<li><p>Run LLDB and connect the debug server with the following commands</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) target create --arch &lt;architecture&gt; /path/to/decrypted/binary/without/aslr/on/your/Mac
+(lldb) process connect connect://&lt;host&gt;:&lt;port&gt;
+</code></pre>
+
+<p>In other words, you should create a target with the binary, e.g. for WhatsApp it looks like</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) target create --arch armv7 /Users/administrator/Google\ Drive/researches/WhatsApp-iOS/bin/2.11.16/WhatsApp-decrypted
+(lldb) process connect connect://192.168.1.110:6666
+</code></pre></li>
+</ol>
+
+<p>Sometimes, LLDB created <em>two</em> targets: the first target (with index <code>0</code>) and the second one (with index <code>1</code>). The second target is usually dummy, it is not related to the binary. I don&rsquo;t know why, looks like a bug. To prevent creating two targets, use the following trick (here is an example for Viber):</p>
+
+<pre><code>(lldb) platform select remote-ios
+(lldb) target create --arch armv7 /Users/administrator/Google\ Drive/researches/viber/bin/5.2.2/Viber
+(lldb) target delete 1
+(lldb) process connect connect://localhost:6666
+</code></pre>
+
+<p>If you are working with the same binary (e.g. with Viber) for a long time, you can put this in <code>.lldbinit</code>:</p>
+
+<pre><code>### .lldbinit start ###
+platform select remote-ios
+target create --arch armv7 /Users/administrator/Google\ Drive/researches/viber/bin/5.2.2/Viber
+target delete 1
+process connect connect://localhost:6666
+### Now binary with symbols is loaded and ready for debug, so do what you want... have fun :) ###
+</code></pre>
+
+<p>So it goes :)</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

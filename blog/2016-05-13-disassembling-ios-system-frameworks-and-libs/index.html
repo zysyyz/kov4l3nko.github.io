@@ -1,0 +1,81 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Disassembling iOS system frameworks and libs with Hopper - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Disassembling iOS system frameworks and libs with Hopper</h1>
+		<div class="post-date">May 13, 2016</div>
+		
+		<p>This extremely short guide is for iOS 7-9, both ARM32 and 64 bit Apple processors. The things you need to start:</p>
+
+<ul>
+<li>Mac with the latest version of <a href="http://www.hopperapp.com/">Hopper</a> installed</li>
+<li>a jailbroken iOS device with OpenSSH installed</li>
+</ul>
+
+<p>Let&rsquo;s start. Most of iOS system libs are sticked together in a DYLD shared cache (a big file mapped to a process address space). SSH your iOS device and</p>
+
+<pre><code># find / | grep dyld_shared_cache
+</code></pre>
+
+<p>For example, in iPhone 4 with iOS 7, you can find the DYLD shared cache here</p>
+
+<pre><code>/System/Library/Caches/com.apple.dyld/dyld_shared_cache_armv7
+</code></pre>
+
+<p>In iPad mini 2 with iOS 9, the caches are here</p>
+
+<pre><code>/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64
+/System/Library/Caches/com.apple.dyld/dyld_shared_cache_armv7s
+</code></pre>
+
+<p>(the iPad mini 2 runs ARM64, so there are two caches: for 32 and 64 bit modes).</p>
+
+<p>Copy the cache from iOS device to a local Mac, open it with Hopper, and choose the library to disassemble:</p>
+
+<p><img src="hopper_open_dyld.png" alt="" /></p>
+
+<p>Enjoy :)</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

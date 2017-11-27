@@ -1,0 +1,120 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Breakpoints in Smali code - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Breakpoints in Smali code</h1>
+		<div class="post-date">Aug 30, 2012</div>
+		
+		<p>In <a href="../2012-08-27-debugging-smali-code-with-apk-tool-and-netbeans/">my previous posts</a> I wrote a step-by-step instruction how to debug Smali code with Apktool and NetBeans. However, there were no details about breakpoints, just a short note in steps 12 and 13</p>
+
+<blockquote>
+<p>12.&nbsp;Set a breakpoint. You must select line with some instruction, you can&rsquo;t set breakpoint on lines starting with <code>.</code>, <code>:</code> or <code>#</code>.</p>
+
+<p>13.&nbsp;Trigger some action in application. If you run at the breakpoint, then the thread should stop and you will be able to debug it step by step, watch variables, etc.</p>
+</blockquote>
+
+<p>In this post I&rsquo;m going to share more information about breakpoints in Smali code.</p>
+
+<p>Using Apktool and NetBeans for Smali debugging, we usually face a problem. We connect the debugger to an already running application. Some Smali code has already been executed <em>before</em> we connected the debugger, and will never be executed again. For example, the constructor and <code>onCreate()</code> method of the main activity class. We can&rsquo;t debug such code, so we may miss something important at the beginning of the application.</p>
+
+<p>To solve the problems, we can use several ways. The easiest one is <code>waitForDebugger()</code>. Here is the step-by-step instruction:</p>
+
+<ol>
+<li><p>Follow <a href="../2012-08-27-debugging-smali-code-with-apk-tool-and-netbeans/debugging-smali-code-with-apk-tool-and-netbeans.md">the instruction</a>, do steps 1 and 2.</p></li>
+
+<li><p>In <code>out/AndroidManifest.xml</code>, find the activity with the following filter</p>
+
+<pre><code>&lt;intent -filter=&quot;-filter&quot;&gt;
+    &lt;action android:name=&quot;android.intent.action.MAIN&quot;&gt;
+    &lt;category android:name=&quot;android.intent.category.LAUNCHER&quot;&gt;
+&lt;/intent&gt;
+</code></pre></li>
+
+<li><p>Find the activity class, e.g. <code>Lmy/activity/class/MyActivity;</code>. Then find the <code>onCreate(...)</code> method (the activity class is a descendant of <code>android.app.Activity</code>, it overrides the <code>onCreate(...)</code> method). The <code>onCreate(...)</code> method is executed after the constructor of the activity class. In most cases, an application logic starts in <code>onCreate(...)</code>.</p></li>
+
+<li><p>Insert</p>
+
+<pre><code>invoke-static {}, Landroid/os/Debug;-&gt;waitForDebugger()V
+</code></pre>
+
+<p>after</p>
+
+<pre><code>invoke-super {p0, p1}, Landroid/app/Activity;-&gt;onCreate(Landroid/os/Bundle;)V
+</code></pre>
+
+<p>in the <code>onCreate(...)</code> method.</p></li>
+
+<li><p>Again, follow <a href="../2012-08-27-debugging-smali-code-with-apk-tool-and-netbeans/">the instruction</a>, do steps from 3 to 11. You will see just a black screen after you start the application on step 9. <strong>Don&rsquo;t worry, it&rsquo;s normal. If Android proposes you to close the application because that the application does not respond, reject the proposition.</strong> The application is frozen at the very beginning of execution, it is waiting for the debugger.</p></li>
+
+<li><p>Set a breakpoint on the first instruction after</p>
+
+<pre><code>invoke-static {}, Landroid/os/Debug;-&gt;waitForDebugger()V
+</code></pre>
+
+<p>in the <code>onCreate(...)</code> method and continue execution. Your breakpoint will be hit and you will be able to debug the application step by step from the very beginning, watch variables, etc.</p></li>
+</ol>
+
+<p>From my experience, <code>waitForDebugger()</code> does not work in some cases. Well, it&rsquo;s not a big problem because we can insert an infinite loop instead of <code>waitForDebugger()</code> in the <code>onCreate(...)</code> method. We should just follow the step-by-step instruction above, but use</p>
+
+<pre><code>:debug
+sget v0, Lmy/activity/class/MyActivity;-&gt;debugFlag:I
+if-nez v0, :debug    
+</code></pre>
+
+<p>code instead of</p>
+
+<pre><code>invoke-static {}, Landroid/os/Debug;-&gt;waitForDebugger()V
+</code></pre>
+
+<p>Do not forget to add the field</p>
+
+<pre><code>.field static debugFlag:I = 0x01
+</code></pre>
+
+<p>to the class. As soon as the <code>onCreate(...)</code> method invoked, it goes to an infinite loop while <code>debugFlag</code> is not 0. So, we have a lot of time to connect the debugger to the running application, then use the debugger to set a breakpoint on the first Smali instruction after the loop, and change <code>debugFlag</code> to <code>0</code> to escape from the infinite loop. If everything is well-done, our breakpoint is hit and we can start debugging from the very beginning of the application.</p>
+
+<p>That&rsquo;s it :) Any questions are wellcome.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

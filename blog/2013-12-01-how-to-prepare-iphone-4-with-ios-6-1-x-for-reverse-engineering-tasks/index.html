@@ -1,0 +1,161 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		How to prepare iPhone 4 with iOS 6.1.x for reverse engineering tasks - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">How to prepare iPhone 4 with iOS 6.1.x for reverse engineering tasks</h1>
+		<div class="post-date">Dec 1, 2013</div>
+		
+		
+
+<p>Here is an extremely detailed step-by-step instruction for a jailbroken iPhone 4 with iOS 6.1.x and Cydia installed. It will be useful for beginners, not for advanced reverse engineers.</p>
+
+<h1 id="step-1-openssh">Step 1. OpenSSH</h1>
+
+<p>First of all, install OpenSSH. On the iPhone, run Cydia and tap &ldquo;OpenSSH Access How-To&rdquo;:</p>
+
+<p><img src="001.png" alt="" /></p>
+
+<p>Tap the &ldquo;OpenSSH&rdquo; link:</p>
+
+<p><img src="002.png" alt="" /></p>
+
+<p>Tap &ldquo;Install&rdquo;</p>
+
+<p><img src="003.png" alt="" /></p>
+
+<p>and &ldquo;Confirm&rdquo;:</p>
+
+<p><img src="004.png" alt="" /></p>
+
+<p>Wait until installation is completed and tap &ldquo;Return to Cydia&rdquo;:</p>
+
+<p><img src="005.png" alt="" /></p>
+
+<p>Now OpenSSH is installed. On the iPhone, open &ldquo;Settings&rdquo; → &ldquo;Wi-Fi&rdquo; and connect the iPhone to a Wi-Fi network (if it is not connected yet). Then tap the blue arrow icon next the Wi-Fi network name <img src="006.png" alt="" /> and note the IP address of the iPhone:</p>
+
+<p><img src="007.png" alt="" /></p>
+
+<p>On a PC, connected to the same Wi-Fi network, run your favorite SSH client (<a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/">Putty</a> or whatever you use) and connect to the IP address you noted above. Use <code>root</code> as the login and <code>alpine</code> as the password. Enter <code>passwd</code> commands in the SSH console to change root and mobile passwords:</p>
+
+<pre><code>iPhone:~ root# passwd
+Changing password for root.
+New password: &lt;type your new password here&gt;
+Retype new password: &lt;retype your new password here&gt;
+	
+iPhone:~ root# passwd mobile
+Changing password for mobile.
+New password: &lt;type your new password here&gt;
+Retype new password: &lt;retype your new password here&gt;
+</code></pre>
+
+<h1 id="step-2-gdb">Step 2. GDB</h1>
+
+<p>It&rsquo;s time to install GDB. On the iPhone, run Cydia and tap &ldquo;Manage&rdquo; and &ldquo;Sources&rdquo;:</p>
+
+<p><img src="008.png" alt="" /></p>
+
+<p>Tap &ldquo;Edit&rdquo;</p>
+
+<p><img src="009.png" alt="" /></p>
+
+<p>and &ldquo;Add&rdquo;:</p>
+
+<p><img src="010.png" alt="" /></p>
+
+<p>Enter <a href="http://cydia.myrepospace.com/ohmza/">http://cydia.myrepospace.com/ohmza/</a> and tap &ldquo;Add Source&rdquo;</p>
+
+<p><img src="011.png" alt="" /></p>
+
+<p>Wait until installation is completed and tap &ldquo;Return to Cydia&rdquo;:</p>
+
+<p><img src="012.png" alt="" /></p>
+
+<p>Tap &ldquo;Sections&rdquo;, choose &ldquo;ohmza -myRepoSpace&rdquo;:</p>
+
+<p><img src="013.png" alt="" /></p>
+
+<p>Tap &ldquo;GNU Debugger (iOS 5&amp;6)&rdquo;:</p>
+
+<p><img src="014.png" alt="" /></p>
+
+<p>Then tap &ldquo;Install&rdquo;</p>
+
+<p><img src="015.png" alt="" /></p>
+
+<p>and &ldquo;Confirm&rdquo;</p>
+
+<p><img src="016.png" alt="" /></p>
+
+<p>Wait until installation is completed and tap &ldquo;Return to Cydia&rdquo;:</p>
+
+<p><img src="017.png" alt="" /></p>
+
+<p>That&rsquo;s it!</p>
+
+<h1 id="step-3-nix-commands">Step 3. *nix commands</h1>
+
+<p>To make well-known *nix commands (e.g. <code>ps</code>) working on the iPhone, install the <code>adv-cmds</code> package from Cydia. On the iPhone, run Cydia and tap &ldquo;Sections&rdquo; and &ldquo;Administration&rdquo;:</p>
+
+<p><img src="018.png" alt="" /></p>
+
+<p>Then tap &ldquo;adv-cmds&rdquo;</p>
+
+<p><img src="019.png" alt="" /></p>
+
+<p>and &ldquo;Install&rdquo;</p>
+
+<p><img src="020.png" alt="" /></p>
+
+<p>and, finally, &ldquo;Confirm&rdquo;</p>
+
+<p><img src="021.png" alt="" /></p>
+
+<p>Wait until installation is completed and tap &ldquo;Return to Cydia&rdquo;:</p>
+
+<p><img src="022.png" alt="" /></p>
+
+<p>That&rsquo;s all. All links in the text were alive when posting.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

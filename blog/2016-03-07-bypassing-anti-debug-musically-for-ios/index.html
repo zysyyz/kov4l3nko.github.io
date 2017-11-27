@@ -1,0 +1,463 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Bypassing an anti-debug protection in Musical.ly 4.7.2 for iOS - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Bypassing an anti-debug protection in Musical.ly 4.7.2 for iOS</h1>
+		<div class="post-date">Mar 7, 2016</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#segmentation-fault-11">Segmentation fault: 11</a></li>
+<li><a href="#decrypting-the-binary">Decrypting the binary</a></li>
+<li><a href="#meet-advobfuscator">Meet ADVobfuscator</a></li>
+<li><a href="#amibeingdebugged-he-he">AmIBeingDebugged? He-he&hellip;</a></li>
+<li><a href="#two-more-sysctl-based-anti-debugging-checks">Two more <code>sysctl</code>-based anti-debugging checks</a></li>
+<li><a href="#and-finally-ptrace-svc-0x80-based-checkpoint">And, finally, <code>ptrace</code> (<code>svc #0x80</code>)-based checkpoint</a></li>
+<li><a href="#f-k-the-protection">F#$k the protection!</a></li>
+</ul>
+</nav>
+		
+		
+
+<p>Today we disable anti-debug protection in Musical.ly 4.7.2 for iOS.</p>
+
+<h1 id="segmentation-fault-11">Segmentation fault: 11</h1>
+
+<p>I installed the <a href="https://itunes.apple.com/us/app/musical.ly-your-music-video/id835599320">musical.ly app</a> from AppStore on my jailbroken iPhone 4 to take a quick look on the app under debugger. I tried to attach <code>debugserver</code> to a running process and got</p>
+
+<pre><code>iPhone:~ root# debugserver *:6666 -a Musical.ly                                                                                     
+debugserver-310.2 for armv7.
+Attaching to process Musical.ly...
+Segmentation fault: 11
+</code></pre>
+
+<p>So the app used some anti-debugging techniques. Interesting&hellip;</p>
+
+<h1 id="decrypting-the-binary">Decrypting the binary</h1>
+
+<p>It was easy. Most of iOS anti-debugging trick work <em>after</em> the binary started. So I just</p>
+
+<ol>
+<li><p>Killed the app process</p></li>
+
+<li><p>Started the app binary under <code>debugserver</code> and got</p>
+
+<pre><code>iPhone:~ root# debugserver *:6666 -x backboard /var/mobile/Applications/BA708472-5A17-41FB-B233-1B5DA84460D6/Musical.ly.app/Musical.ly 
+debugserver-310.2 for armv7.
+Listening to port 6666 for a connection from *...
+</code></pre></li>
+
+<li><p>Then, I run LLDB, connected it to the debug server, and listed modules:</p>
+
+<pre><code>(lldb) image list
+[  0] 651A31C3-9F71-311F-965F-8AC44DE02C88 0x2bea6000 /Users/administrator/Library/Developer/Xcode/iOS DeviceSupport/7.1.2 (11D257)/Symbols/usr/lib/dyld
+</code></pre>
+
+<p><code>Musical.ly</code> not loaded. No modules loaded at all. Ok.</p></li>
+
+<li><p>I loaded modules:</p>
+
+<pre><code>(lldb) settings set target.process.stop-on-sharedlibrary-events 1
+(lldb) c
+Process 1105 resuming
+(lldb) error: libarclite_iphoneos.a(arclite.o) failed to load objfile for /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/arc/libarclite_iphoneos.a
+Process 1105 stopped
+* thread #1: tid = 0x8777f, 0x2be6d0cc dyld`gdb_image_notifier, stop reason = shared-library-event
+    frame #0: 0x2be6d0cc dyld`gdb_image_notifier
+dyld`gdb_image_notifier:
+-&gt;  0x2be6d0cc &lt;+0&gt;: bx     lr
+
+dyld`dyldbootstrap::start:
+    0x2be6d0d0 &lt;+0&gt;: push   {r4, r5, r6, r7, lr}
+    0x2be6d0d2 &lt;+2&gt;: add    r7, sp, #0xc
+    0x2be6d0d4 &lt;+4&gt;: push.w {r8, r10, r11}
+(lldb)
+</code></pre>
+
+<p>Image list said that <code>Musical.ly</code> was loaded</p>
+
+<pre><code> (lldb) image list Musical.ly
+ [  0] 8BBD1E1B-A68B-32D5-8FAC-11C30CE33079 0x0006e000 /var/mobile/Applications/BA708472-5A17-41FB-B233-1B5DA84460D6/Musical.ly.app/Musical.ly (0x000000000006e000)
+</code></pre></li>
+</ol>
+
+<p>Finally, I just did the trick described <a href="../2016-03-01-decrypting-apps-from-appstore/">here</a>, and got a decrypted binary. Yes, it was easy.</p>
+
+<h1 id="meet-advobfuscator">Meet ADVobfuscator</h1>
+
+<p>Hopper disassembler said the app used <a href="https://github.com/andrivet/ADVobfuscator">ADVobfuscator</a>. I found a lot of traces of the obfuscator in symbols, e.g.</p>
+
+<pre><code>imp___picsymbolstub4___ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINS0_5front4noneEEENS1_11HandledEnumERKT_b:
+0x00fb4d5c         ldr        ip, = 0x315db8                                    ; 0x315db8,0xfb4d68, XREF=__ZL5cleanPv+128, __ZL5cleanPv+276, __Z7p_beginPFvvE+858, __Z7p_beginPFvvE+1396, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINS0_5front4noneEEENS1_11HandledEnumERKT_b+46, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINSE_6event4EEENS1_11HandledEnumERKT_b+46, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINSE_6event5EEENS1_11HandledEnumERKT_b+46, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINSE_6event2EEENS1_11HandledEnumERKT_b+46, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINSE_6event3EEENS1_11HandledEnumERKT_b+46, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalISD_EENS1_11HandledEnumERKT_b+46, __ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINS0_5front4noneEEENS1_11HandledEnumERKT_b$shim+4, …
+0x00fb4d60         add        ip, pc, ip                                        ; imp___la_symbol_ptr___ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINS0_5front4noneEEENS1_11HandledEnumERKT_b
+0x00fb4d64         ldr        pc, [ip]                                          ; 0x466119,imp___la_symbol_ptr___ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine17MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEES8_EENS_9parameter5void_ESG_SG_SG_E22process_event_internalINS0_5front4noneEEENS1_11HandledEnumERKT_b
+                        ; endp
+0x00fb4d68         dd         0x00315db8
+</code></pre>
+
+<p>The ADVobfuscator produced a sophisticated machine code, but it was not a problem. I didn&rsquo;t need to crack it all, I just needed to switch anti-debugging off.</p>
+
+<h1 id="amibeingdebugged-he-he">AmIBeingDebugged? He-he&hellip;</h1>
+
+<p>After a quick look inside ADVobfuscator sources, I <a href="https://github.com/andrivet/ADVobfuscator/blob/master/ADVobfuscator/DetectDebugger.cpp">found</a> <code>AmIBeingDebugged()</code> function. It looked like</p>
+
+<pre><code>bool AmIBeingDebugged()
+// Returns true if the current process is being debugged (either running under the debugger or has a debugger attached post facto).
+{
+    // Note: It is possible to obfuscate this with ADVobfuscator (like the calls to getpid and sysctl)
+    
+    kinfo_proc info;
+    info.kp_proc.p_flag = 0;
+    
+    int mib[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()};
+   
+    size_t size = sizeof(info);
+    sysctl(mib, sizeof(mib) / sizeof(*mib), &amp;info, &amp;size, NULL, 0);
+    
+    return (info.kp_proc.p_flag &amp; P_TRACED) != 0;
+}
+</code></pre>
+
+<p>Hopper said the <code>Musical.ly</code> binary also had it</p>
+
+<pre><code>               __Z16AmIBeingDebuggedv:        // AmIBeingDebugged()
+0x0044c434         push       {r4, r5, r7, lr}                                  ; XREF=__ZN5boost3msm4back13state_machineIN8andrivet13ADVobfuscator8Machine27MachineINS4_5eventINS4_4VoidENS4_17ObfuscatedAddressIPFvvEEEJEEE14DetectDebuggerS8_EENS_9parameter5void_ESH_SH_SH_E6a_row_INS0_5front3RowINSF_6State2ENSF_6event1ENSF_6State3ENSF_13CallPredicateENSK_4noneEEEE7executeERSI_iiRKSN_+18
+0x0044c436         add        r7, sp, #0x8
+0x0044c438         sub.w      sp, sp, #0x20c
+0x0044c43c         movw       r4, #0xbbe8                                       ; :lower16:(imp___nl_symbol_ptr____stack_chk_guard - 0x44c44c)
+0x0044c440         movs       r5, #0x0
+0x0044c442         movt       r4, #0xe7                                         ; :upper16:(imp___nl_symbol_ptr____stack_chk_guard - 0x44c44c)
+0x0044c446         movs       r0, #0x1
+0x0044c448         add        r4, pc                                            ; imp___nl_symbol_ptr____stack_chk_guard
+0x0044c44a         movs       r1, #0xe
+0x0044c44c         ldr        r4, [r4]                                          ; imp___nl_symbol_ptr____stack_chk_guard,___stack_chk_guard
+0x0044c44e         ldr        r4, [r4]                                          ; ___stack_chk_guard
+0x0044c450         str        r4, [sp, #0x214 + var_C]
+0x0044c452         str        r0, [sp, #0x214 + var_208]
+0x0044c454         str        r1, [sp, #0x214 + var_204]
+0x0044c456         str        r5, [sp, #0x214 + var_1E8]
+0x0044c458         str        r0, [sp, #0x214 + var_200]
+0x0044c45a         blx        imp___picsymbolstub4__getpid
+0x0044c45e         str        r0, [sp, #0x214 + var_1FC]
+0x0044c460         mov.w      r0, #0x1ec
+0x0044c464         str        r0, [sp, #0x214 + var_20C]
+0x0044c466         add        r0, sp, #0xc                                      ; argument #1 for method imp___picsymbolstub4__sysctl
+0x0044c468         add        r2, sp, #0x1c                                     ; argument #3 for method imp___picsymbolstub4__sysctl
+0x0044c46a         add        r3, sp, #0x8                                      ; argument #4 for method imp___picsymbolstub4__sysctl
+0x0044c46c         movs       r1, #0x4                                          ; argument #2 for method imp___picsymbolstub4__sysctl
+0x0044c46e         str        r5, [sp, #0x214 + var_214]                        ; argument #5 for method imp___picsymbolstub4__sysctl
+0x0044c470         str        r5, [sp, #0x214 + var_210]
+0x0044c472         blx        imp___picsymbolstub4__sysctl
+0x0044c476         ldr        r0, [sp, #0x214 + var_1E8]
+0x0044c478         ldr        r1, [sp, #0x214 + var_C]
+0x0044c47a         subs       r1, r4, r1
+0x0044c47c         itttt      eq
+0x0044c47e         andeq      r0, r0, #0x800
+0x0044c482         lsreq      r0, r0, #0xb
+0x0044c484         addeq.w    sp, sp, #0x20c
+0x0044c488         popeq      {r4, r5, r7, pc}
+0x0044c48a         blx        imp___picsymbolstub4____stack_chk_fail
+                        ; endp
+0x0044c48e         nop
+</code></pre>
+
+<h1 id="two-more-sysctl-based-anti-debugging-checks">Two more <code>sysctl</code>-based anti-debugging checks</h1>
+
+<p>After digging refs to <code>imp___picsymbolstub4__sysctl</code>, I found two more &ldquo;interesting&rdquo; procedures:</p>
+
+<pre><code>               __Z10IsDebuggedv:        // IsDebugged()
+0x0044c490         push       {r4, r5, r7, lr}                                  ; XREF=__Z7p_beginPFvvE+1138, 0x12c84ac
+0x0044c492         add        r7, sp, #0x8
+0x0044c494         sub.w      sp, sp, #0x20c
+0x0044c498         movw       r4, #0xbb8c                                       ; :lower16:(imp___nl_symbol_ptr____stack_chk_guard - 0x44c4a8)
+0x0044c49c         movs       r5, #0x0
+0x0044c49e         movt       r4, #0xe7                                         ; :upper16:(imp___nl_symbol_ptr____stack_chk_guard - 0x44c4a8)
+0x0044c4a2         movs       r0, #0x1
+0x0044c4a4         add        r4, pc                                            ; imp___nl_symbol_ptr____stack_chk_guard
+0x0044c4a6         movs       r1, #0xe
+0x0044c4a8         ldr        r4, [r4]                                          ; imp___nl_symbol_ptr____stack_chk_guard,___stack_chk_guard
+0x0044c4aa         ldr        r4, [r4]                                          ; ___stack_chk_guard
+0x0044c4ac         str        r4, [sp, #0x214 + var_C]
+0x0044c4ae         str        r0, [sp, #0x214 + var_208]
+0x0044c4b0         str        r1, [sp, #0x214 + var_204]
+0x0044c4b2         str        r5, [sp, #0x214 + var_1E8]
+0x0044c4b4         str        r0, [sp, #0x214 + var_200]
+0x0044c4b6         blx        imp___picsymbolstub4__getpid
+0x0044c4ba         str        r0, [sp, #0x214 + var_1FC]
+0x0044c4bc         mov.w      r0, #0x1ec
+0x0044c4c0         str        r0, [sp, #0x214 + var_20C]
+0x0044c4c2         add        r0, sp, #0xc                                      ; argument #1 for method imp___picsymbolstub4__sysctl
+0x0044c4c4         add        r2, sp, #0x1c                                     ; argument #3 for method imp___picsymbolstub4__sysctl
+0x0044c4c6         add        r3, sp, #0x8                                      ; argument #4 for method imp___picsymbolstub4__sysctl
+0x0044c4c8         movs       r1, #0x4                                          ; argument #2 for method imp___picsymbolstub4__sysctl
+0x0044c4ca         str        r5, [sp, #0x214 + var_214]                        ; argument #5 for method imp___picsymbolstub4__sysctl
+0x0044c4cc         str        r5, [sp, #0x214 + var_210]
+0x0044c4ce         blx        imp___picsymbolstub4__sysctl
+0x0044c4d2         ldr        r0, [sp, #0x214 + var_1DC]
+0x0044c4d4         cmp        r0, #0x0
+0x0044c4d6         it         ne
+0x0044c4d8         movne      r0, #0x1
+0x0044c4da         ldr        r1, [sp, #0x214 + var_C]
+0x0044c4dc         subs       r1, r4, r1
+0x0044c4de         itt        eq
+0x0044c4e0         addeq.w    sp, sp, #0x20c
+0x0044c4e4         popeq      {r4, r5, r7, pc}
+0x0044c4e6         blx        imp___picsymbolstub4____stack_chk_fail
+                        ; endp
+0x0044c4ea         nop        
+</code></pre>
+
+<p>and</p>
+
+<pre><code>               _CLSProcessDebuggerAttached:
+0x00bb5528         push       {r4, r5, r7, lr}                                  ; XREF=_CLSContextInitialize+148
+0x00bb552a         add        r7, sp, #0x8
+0x00bb552c         sub.w      sp, sp, #0x20c
+0x00bb5530         movw       r4, #0x2af4                                       ; :lower16:(imp___nl_symbol_ptr____stack_chk_guard - 0xbb5540)
+0x00bb5534         movs       r5, #0x0
+0x00bb5536         movt       r4, #0x71                                         ; :upper16:(imp___nl_symbol_ptr____stack_chk_guard - 0xbb5540)
+0x00bb553a         movs       r0, #0x1
+0x00bb553c         add        r4, pc                                            ; imp___nl_symbol_ptr____stack_chk_guard
+0x00bb553e         movs       r1, #0xe
+0x00bb5540         ldr        r4, [r4]                                          ; imp___nl_symbol_ptr____stack_chk_guard,___stack_chk_guard
+0x00bb5542         ldr        r4, [r4]                                          ; ___stack_chk_guard
+0x00bb5544         str        r4, [sp, #0x214 + var_C]
+0x00bb5546         str        r0, [sp, #0x214 + var_1C]
+0x00bb5548         str        r1, [sp, #0x214 + var_18]
+0x00bb554a         str        r5, [sp, #0x214 + var_1F8]
+0x00bb554c         str        r0, [sp, #0x214 + var_14]
+0x00bb554e         blx        imp___picsymbolstub4__getpid
+0x00bb5552         str        r0, [sp, #0x214 + var_10]
+0x00bb5554         mov.w      r0, #0x1ec
+0x00bb5558         str        r0, [sp, #0x214 + var_20C]
+0x00bb555a         add        r0, sp, #0x1f8                                    ; argument #1 for method imp___picsymbolstub4__sysctl
+0x00bb555c         add        r2, sp, #0xc                                      ; argument #3 for method imp___picsymbolstub4__sysctl
+0x00bb555e         add        r3, sp, #0x8                                      ; argument #4 for method imp___picsymbolstub4__sysctl
+0x00bb5560         movs       r1, #0x4                                          ; argument #2 for method imp___picsymbolstub4__sysctl
+0x00bb5562         str        r5, [sp, #0x214 + var_214]                        ; argument #5 for method imp___picsymbolstub4__sysctl
+0x00bb5564         str        r5, [sp, #0x214 + var_210]
+0x00bb5566         blx        imp___picsymbolstub4__sysctl
+0x00bb556a         cbz        r0, 0xbb5588
+	
+0x00bb556c         movw       r0, #0x69c                                        ; &quot;%s: sysctl failed while trying to get kinfo_proc\\n&quot;, :lower16:(0x1095c1c - 0xbb5580)
+0x00bb5570         movt       r0, #0x4e                                         ; &quot;%s: sysctl failed while trying to get kinfo_proc\\n&quot;, :upper16:(0x1095c1c - 0xbb5580)
+0x00bb5574         movw       r1, #0x6cc                                        ; &quot;CLSProcessDebuggerAttached&quot;, :lower16:(0x1095c4e - 0xbb5582)
+0x00bb5578         movt       r1, #0x4e                                         ; &quot;CLSProcessDebuggerAttached&quot;, :upper16:(0x1095c4e - 0xbb5582)
+0x00bb557c         add        r0, pc                                            ; &quot;%s: sysctl failed while trying to get kinfo_proc\\n&quot;, argument #1 for method _CLSSDKFileLog
+0x00bb557e         add        r1, pc                                            ; &quot;CLSProcessDebuggerAttached&quot;, argument #2 for method _CLSSDKFileLog
+0x00bb5580         bl         _CLSSDKFileLog
+0x00bb5584         movs       r0, #0x0
+0x00bb5586         b          0xbb5592
+	
+0x00bb5588         ldrb.w     r0, [sp, #0x214 + var_1F7]                        ; XREF=_CLSProcessDebuggerAttached+66
+0x00bb558c         and        r0, r0, #0x8
+0x00bb5590         lsrs       r0, r0, #0x3
+	
+0x00bb5592         ldr        r1, [sp, #0x214 + var_C]                          ; XREF=_CLSProcessDebuggerAttached+94
+0x00bb5594         subs       r1, r4, r1
+0x00bb5596         itt        eq
+0x00bb5598         addeq.w    sp, sp, #0x20c
+0x00bb559c         popeq      {r4, r5, r7, pc}
+0x00bb559e         blx        imp___picsymbolstub4____stack_chk_fail
+                        ; endp
+0x00bb55a2         nop        
+</code></pre>
+
+<p>I was not sure if that two procedures were a part of ADVobfuscator. I did not digg so deep. May be the procs were self-made.</p>
+
+<h1 id="and-finally-ptrace-svc-0x80-based-checkpoint">And, finally, <code>ptrace</code> (<code>svc #0x80</code>)-based checkpoint</h1>
+
+<p>Finally, I found</p>
+
+<pre><code>           __ZL11anti_ptracev:        // anti_ptrace()
+0x00465a48         mov.w      r0, #0x1f                                         ; XREF=__Z7p_beginPFvvE+1458, __Z7p_beginPFvvE+1462, __Z7p_beginPFvvE+1466
+0x00465a4c         mov.w      r1, #0x0
+0x00465a50         mov.w      r2, #0x0
+0x00465a54         mov.w      r3, #0x0
+0x00465a58         mov.w      ip, #0x1a
+0x00465a5c         svc        #0x80
+</code></pre>
+
+<p>The code is equivalent to <code>ptrace(PT_DENY_ATTACH, 0, 0, 0)</code>.</p>
+
+<h1 id="f-k-the-protection">F#$k the protection!</h1>
+
+<p>To disable the protection, I loaded the app under LLDB by</p>
+
+<pre><code>iPhone:~ root# debugserver *:6666 -x backboard /var/mobile/Applications/BA708472-5A17-41FB-B233-1B5DA84460D6/Musical.ly.app/Musical.ly
+</code></pre>
+
+<p>Then I loaded modules and calculated the ASLR offset for <code>Musical.ly</code>. Further, I patched the checkpoints (here you see some dumps from LLDB console, the procedures&rsquo; addresses are ASLR-shifted):</p>
+
+<ol>
+<li><p>Patch <code>AmIBeingDebugged()</code>:</p>
+
+<pre><code>(lldb) mem write 0x4b6434 0x80 0xEA 0x00 0x00 0xF7 0x46
+(lldb) dis -s 0x004b6434
+Musical.ly`AmIBeingDebugged():
+    0x4b6434 &lt;+0&gt;:  eor.w  r0, r0, r0
+    0x4b6438 &lt;+4&gt;:  mov    pc, lr
+    0x4b643a &lt;+6&gt;:  ldrb   r3, [r0, #0x14]
+    0x4b643c &lt;+8&gt;:  movw   r4, #0xbbe8
+    0x4b6440 &lt;+12&gt;: movs   r5, #0x0
+    0x4b6442 &lt;+14&gt;: movt   r4, #0xe7
+    0x4b6446 &lt;+18&gt;: movs   r0, #0x1
+    0x4b6448 &lt;+20&gt;: add    r4, pc
+    0x4b644a &lt;+22&gt;: movs   r1, #0xe
+    0x4b644c &lt;+24&gt;: ldr    r4, [r4]
+    0x4b644e &lt;+26&gt;: ldr    r4, [r4]
+    0x4b6450 &lt;+28&gt;: str    r4, [sp, #0x208]
+    0x4b6452 &lt;+30&gt;: str    r0, [sp, #0xc]
+</code></pre></li>
+
+<li><p>Patch <code>IsDebugged()</code></p>
+
+<pre><code>(lldb) mem write 0x4b6490 0x80 0xEA 0x00 0x00 0xF7 0x46
+(lldb) dis -s 0x004b6490
+Musical.ly`IsDebugged():
+ 0x4b6490 &lt;+0&gt;:  eor.w  r0, r0, r0
+ 0x4b6494 &lt;+4&gt;:  mov    pc, lr
+ 0x4b6496 &lt;+6&gt;:  ldrb   r3, [r0, #0x14]
+ 0x4b6498 &lt;+8&gt;:  movw   r4, #0xbb8c
+ 0x4b649c &lt;+12&gt;: movs   r5, #0x0
+ 0x4b649e &lt;+14&gt;: movt   r4, #0xe7
+ 0x4b64a2 &lt;+18&gt;: movs   r0, #0x1
+ 0x4b64a4 &lt;+20&gt;: add    r4, pc
+ 0x4b64a6 &lt;+22&gt;: movs   r1, #0xe
+ 0x4b64a8 &lt;+24&gt;: ldr    r4, [r4]
+ 0x4b64aa &lt;+26&gt;: ldr    r4, [r4]
+ 0x4b64ac &lt;+28&gt;: str    r4, [sp, #0x208]
+ 0x4b64ae &lt;+30&gt;: str    r0, [sp, #0xc]
+</code></pre></li>
+
+<li><p>Patch <code>CLSProcessDebuggerAttached()</code>:</p>
+
+<pre><code>(lldb) mem write 0xc1f528 0x80 0xEA 0x00 0x00 0xF7 0x46
+(lldb) dis -s 0xc1f528
+Musical.ly`CLSProcessDebuggerAttached:
+    0xc1f528 &lt;+0&gt;:  eor.w  r0, r0, r0
+    0xc1f52c &lt;+4&gt;:  mov    pc, lr
+    0xc1f52e &lt;+6&gt;:  ldrb   r3, [r0, #0x14]
+    0xc1f530 &lt;+8&gt;:  movw   r4, #0x2af4
+    0xc1f534 &lt;+12&gt;: movs   r5, #0x0
+    0xc1f536 &lt;+14&gt;: movt   r4, #0x71
+    0xc1f53a &lt;+18&gt;: movs   r0, #0x1
+    0xc1f53c &lt;+20&gt;: add    r4, pc
+    0xc1f53e &lt;+22&gt;: movs   r1, #0xe
+    0xc1f540 &lt;+24&gt;: ldr    r4, [r4]
+    0xc1f542 &lt;+26&gt;: ldr    r4, [r4]
+    0xc1f544 &lt;+28&gt;: str    r4, [sp, #0x208]
+    0xc1f546 &lt;+30&gt;: str    r0, [sp, #0x1f8]
+</code></pre></li>
+
+<li><p>Patch <code>anti_ptrace()</code>:</p>
+
+<pre><code>(lldb) memory write 0x4cfa48 0x70 0x47
+dis -s 0x004cfa48
+Musical.ly`anti_ptrace():
+    0x4cfa48 &lt;+0&gt;:  bx     lr
+    0x4cfa4a &lt;+2&gt;:  movs   r7, r3
+    0x4cfa4c &lt;+4&gt;:  mov.w  r1, #0x0
+    0x4cfa50 &lt;+8&gt;:  mov.w  r2, #0x0
+    0x4cfa54 &lt;+12&gt;: mov.w  r3, #0x0
+    0x4cfa58 &lt;+16&gt;: mov.w  r12, #0x1a
+    0x4cfa5c &lt;+20&gt;: svc    #0x80
+    0x4cfa5e &lt;+22&gt;: bx     lr
+</code></pre></li>
+</ol>
+
+<p>Finally, I run the app under debugger:</p>
+
+<pre><code>(lldb) c
+Process 1105 resuming
+2016-03-06 16:12:24.729 Musical.ly[1105:60b] SSL Kill Switch - Hook Enabled.
+CoreFoundation = 847.270000
+2016-03-06 16:12:28.668 Musical.ly[1105:60b][Crashlytics] Version 3.6.0 (99)
+2016-03-06 16:12:29:263 Musical.ly[1105:60b] Logging: UINavigationController viewDidLoad
+2016-03-06 16:12:29:396 Musical.ly[1105:60b] Logging: MLSplashTransitionViewController viewDidLoad
+2016-03-06 16:12:30:186 Musical.ly[1105:60b] will open yapdatabase /var/mobile/Applications/BA708472-5A17-41FB-B233-1B5DA84460D6/Library/Application Support/db.yap
+2016-03-06 16:12:30:298 Musical.ly[1105:60b] open /var/mobile/Applications/BA708472-5A17-41FB-B233-1B5DA84460D6/Library/Application Support/db.yap success
+2016-03-06 16:12:31.008 Musical.ly[1105:1f13] sign time: 2016-03-07 00:12:31
+[Crashlytics] The signal SIGABRT has a non-Crashlytics handler ((null)).  This will interfer with reporting.
+[Crashlytics] The signal SIGBUS has a non-Crashlytics handler ((null)).  This will interfer with reporting.
+ non-Crashlytics handler ((null)).  This will interfer with reporting.
+[Crashlytics] The signal SIGILL has a non-Crashlytics handler ((null)).  This will interfer with reporting.
+his will interfer with reporting.
+[Crashlytics] The signal SIGSYS has a non-Crashlytics handler ((null)).  This will interfer with reporting.
+[Crashlytics] The signal SIGTRAP has a non-Crashlytics handler ((null)).  This will interfer with reporting.
+16-03-06 16:12:31:438 Musical.ly[1105:60b] Logging: UINavigationController viewDidAppear:
+2016-03-06 16:12:31:443 Musical.ly[1105:60b] Logging: MLSplashTransitionViewController viewDidAppear:
+ViewController viewDidLoad
+2016-03-06 16:12:31:946 Musical.ly[1105:60b] Logging: MLLoginViewController viewDidLoad
+2016-03-06 16:12:32:003 Musical.ly[1105:60b] Logging: MLSmoothVideoLoopViewController viewDidLoad
+60b] Logging: MLWizardViewController viewDidAppear:
+2016-03-06 16:12:32:780 Musical.ly[1105:60b] Logging: MLSmoothVideoLoopViewController viewDidLoad
+2016-03-06 16:12:33:311 Musical.ly[1105:60b] Logging: MLLoginViewController viewDidAppear:
+6:12:33:313 Musical.ly[1105:60b] Logging: MLSmoothVideoLoopViewController viewDidAppear:
+2016-03-06 16:12:35:870 Musical.ly[1105:60b] Error Occured:Error Domain=org.restkit.RestKit.ErrorDomain Code=-1016 &quot;Expected content type {(
+    &quot;text/javascript&quot;,
+    &quot;application/x-www-form-urlencoded&quot;,
+    &quot;application/json&quot;
+)}, got text/plain&quot; UserInfo=0x14d0c430 {NSLocalizedRecoverySuggestion={'success':true}, NSErrorFailingURLKey=https://www.musical.ly/rest/v2/users/active, AFNetworkingOperationFaestErrorKeyV1=&lt;NSMutableURLRequest: 0x16033f40&gt; { URL: https://www.musical.ly/rest/v2/users/active }, NSLocalizedDescription=Expected content type {(
+    &quot;text/javascript&quot;,
+    &quot;application/x-www-form-urlencoded&quot;,
+    &quot;application/json&quot;
+ain, AFNetworkingOperationFailingURLResponseErrorKeyV1=&lt;NSHTTPURLResponse: 0x14f60f30&gt; { URL: https://www.musical.ly/rest/v2/users/active } { status code: 200, headers {
+    Connection = &quot;keep-alive&quot;;
+    &quot;Content-Length&quot; = 16;
+lication/octet-stream&quot;;
+    Date = &quot;Mon, 07 Mar 2016 00:12:35 GMT&quot;;
+    Server = &quot;nginx/1.4.6 (Ubuntu)&quot;;
+} }}
+2016-03-06 16:12:35:905 Musical.ly[1105:60b] Logging: MLWizardViewController viewDidAppear:
+ing: MLLoginViewController viewDidAppear:
+2016-03-06 16:12:36:707 Musical.ly[1105:60b] Logging: MLSmoothVideoLoopViewController viewDidAppear:
+2016-03-06 16:12:37:190 Musical.ly[1105:60b] Logging: MLSmoothVideoLoopViewController viewDidDisappear:
+(lldb)  
+</code></pre>
+
+<p>The app was ready for debugging :)</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

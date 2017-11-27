@@ -1,0 +1,582 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		User-defined GDB commands on iOS - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">User-defined GDB commands on iOS</h1>
+		<div class="post-date">Jan 9, 2014</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#hello-world">Hello, World!</a></li>
+<li><a href="#help-for-a-user-defined-command">Help for a user-defined command</a></li>
+<li><a href="#execute-a-user-defined-command-from-a-script-file">Execute a user-defined command from a script file</a></li>
+<li><a href="#running-user-defined-commands-on-breakpoints">Running user-defined commands on breakpoints</a></li>
+<li><a href="#variables">Variables</a></li>
+<li><a href="#arguments">Arguments</a></li>
+<li><a href="#objective-c-runtime-structures-as-arguments">Objective C runtime structures as arguments</a></li>
+<li><a href="#passing-variables-to-objective-c-methods">Passing variables to Objective C methods</a></li>
+<li><a href="#passing-variables-to-c-functions">Passing variables to C functions</a></li>
+<li><a href="#conditional-execution">Conditional execution</a></li>
+<li><a href="#loops">Loops</a></li>
+<li><a href="#conditions-with-c-functions-and-objective-c-methods-calling">Conditions with C functions and Objective C methods calling</a></li>
+<li><a href="#using-printf-for-pretty-looking-output">Using <code>printf</code> for pretty-looking output</a></li>
+<li><a href="#summary">Summary</a></li>
+<li><a href="#useful-links">Useful links</a></li>
+</ul>
+</nav>
+		
+		
+
+<p>In this post we will discuss user-defined GDB commands on iOS. We will talk about some really simple things and play with &ldquo;toy&rdquo; examples. Hovewer, it is assumed that the reader is not a 100% noob. He (or she) should be familiar GDB on iOS and should has basic knowledge of Objective C runtime (all that classes, class instances, properties&hellip; well, you know :)).</p>
+
+<p>All examples were tested for GDB 6.3.50-20050815 (Apple version gdb-1821) running on a jailbroken iPhone 4 with iOS 6.1.3. Probably they will work with other versions of GDB and iOS as well. Also, please note that GDB for iOS is not the most stable debugger ever created. So if you are sure that your user-defined command is okay, but it doesn&rsquo;t work, just restart GDB and try again. Sometimes it helps :)</p>
+
+<h1 id="hello-world">Hello, World!</h1>
+
+<p>Let&rsquo;s start with a simple user-defined command <code>hello_world</code>. First we should connect a jailbroken iPhone with our favorite SSH client (I like Putty, so we&rsquo;ll see it on all screenshots in this post :)). Then we should start GDB and attach it to a running process. Now if we type in GDB console</p>
+
+<pre><code>(gdb) define hello_world
+</code></pre>
+
+<p>we should see the following prompt:</p>
+
+<pre><code>Type commands for definition of &quot;hello_world&quot;.
+End with a line saying just &quot;end&quot;.
+&gt;
+</code></pre>
+
+<p>It&rsquo;s time to type our first user-defined command:</p>
+
+<pre><code>&gt; printf &quot;Hello, World!\n&quot;
+&gt; end
+</code></pre>
+
+<p>It&rsquo;s done! To run the command, we should just type</p>
+
+<pre><code>(gdb) hello_world
+</code></pre>
+
+<p>The result of execution will look like</p>
+
+<p><img src="hello_world.png" alt="" /></p>
+
+<p>Please note that a name of a user-defined command is not case sensitive. It contains alphabetical characters, digits, <code>_</code> and <code>-</code>. Spaces and characters like <code>+*/@#!?$&amp;()=</code> are forbidden.</p>
+
+<h1 id="help-for-a-user-defined-command">Help for a user-defined command</h1>
+
+<p>Ok, we&rsquo;ve wrote the <code>hello_world</code> command. Now let&rsquo;s document it. If we type in GDB console</p>
+
+<pre><code>(gdb) document hello_world
+</code></pre>
+
+<p>we should see the following prompt:</p>
+
+<pre><code>Type documentation for &quot;hello_world&quot;.
+End with a line saying just &quot;end&quot;.
+&gt;
+</code></pre>
+
+<p>Let&rsquo;s type a description of the <code>hello_world</code> command, e.g.</p>
+
+<pre><code>&gt; The hello_world command just prints Hello, World!
+&gt; That's all :)
+&gt; end
+</code></pre>
+
+<p>To show the help, just type in GDB console:</p>
+
+<pre><code>(gdb) help hello_world
+</code></pre>
+
+<p>The result should look like</p>
+
+<p><img src="hello_world_help.png" alt="" /></p>
+
+<p>Please note that it is not possible to document an undefined command. If we want to document a user-defined command, we should define it with <code>define</code> keyword first.</p>
+
+<h1 id="execute-a-user-defined-command-from-a-script-file">Execute a user-defined command from a script file</h1>
+
+<p>Now let&rsquo;s put the <code>hello_world</code> command to a file and call it as a script. For this purpose, let&rsquo;s open any text editor that can save files in plain text format, and type the commands and comments (comments start with the hash character, <code>#</code>, and extend to the end of the line):</p>
+
+<pre><code>###########################################################################
+# This is just a useless example of
+# a user-defined command in a script
+# file helloworld.gdbs
+###########################################################################
+
+# The command
+
+define hello_world
+printf &quot;Hello, World!\n&quot;
+end
+
+# The help
+
+document hello_world
+The hello_world command just prints Hello, World!
+That's all :)
+end
+</code></pre>
+
+<p>Save the text to a plain text file named <code>helloworld.gdbs</code> in a local folder on PC, then copy the file to any folder on the iPhone, e.g. <code>/usr/bin/</code>. To load the <code>helloworld.gdbs</code> script, just type in GDB console:</p>
+
+<pre><code>(gdb) source /usr/bin/helloworld.gdbs
+</code></pre>
+
+<p>That&rsquo;s it! Now if we try to execute <code>hello_world</code> and <code>help hello_world</code>, we will see something similar to</p>
+
+<p><img src="hello_world_script.png" alt="" /></p>
+
+<p>Please note that the the script file name and <code>.gdbs</code> extension (<strong>GDB s</strong>cript) was chosen arbitrary. In fact, we could choose any file name and extension, e.g. <code>hello-world.gdscr</code> (<strong>GD</strong>B <strong>scr</strong>ipt) or even <code>hw1234.mcs</code> (<strong>m</strong>y <strong>c</strong>ool <strong>s</strong>cript :)). Anyway, GDB doesn&rsquo;t care.</p>
+
+<p>Also, please note that the script file should not contain tabs. If we want to use indents to keep code readable, we should use spaces, not tabs:</p>
+
+<pre><code># The command
+
+define hello_world
+  printf &quot;Hello, World!\n&quot;
+end
+</code></pre>
+
+<h1 id="running-user-defined-commands-on-breakpoints">Running user-defined commands on breakpoints</h1>
+
+<p>It is possible to run a user defined command on a breakpoint as well as any other regular GDB command. Just use <code>commands</code>. For example, to run <code>help hello_world</code> on a breakpoint on <code>[NSURLConnection start]</code>, we should type in a GDB console:</p>
+
+<pre><code>(gdb) break -[NSURLConnection start]
+</code></pre>
+
+<p>Then type</p>
+
+<pre><code>(gdb) commands
+</code></pre>
+
+<p>and, after the prompt,</p>
+
+<pre><code>Type commands for when breakpoint 1 is hit, one per line.
+End with a line saying just &quot;end&quot;.
+&gt;
+</code></pre>
+
+<p>type the commands</p>
+
+<pre><code>&gt; hello_world
+&gt; end
+</code></pre>
+
+<p>Continue execution with <code>c</code>. As soon as <code>[NSURLConnection start]</code> is invoked, we&rsquo;ll see &ldquo;Hello, World!&rdquo;:</p>
+
+<p><img src="hello_world_break.png" alt="" /></p>
+
+<h1 id="variables">Variables</h1>
+
+<p>We&rsquo;ll say &ldquo;<em>define</em>&rdquo; many times in this section. This is because we will consider how to <em>define</em> and use variables in user-<em>defined</em> commands :) The variable should be defined with <code>set</code> statement and should start with <code>$</code>, for example:</p>
+
+<pre><code>define hello_with_variable
+  set $hello_world=&quot;Hello, World!\n&quot;
+  printf &quot;%s&quot;, $hello_world
+end
+</code></pre>
+
+<p>Here is how it looks in GDB console:</p>
+
+<p><img src="hello_with_var.png" alt="" /></p>
+
+<p>Note that the value of a non initialized variable is <code>void</code>. For example, let&rsquo;s define a command which prints the non initialized variable <code>$a</code>.</p>
+
+<pre><code>define print_non_init_var
+   print $a
+end
+</code></pre>
+
+<p>If we execute the command, we will see something like:</p>
+
+<p><img src="non_init_vars.png" alt="" /></p>
+
+<p>Also please note that all variables in user-defined commands behavior like global variables during debugging session (the only exception is arguments, see the sections below for details). Let&rsquo;s consider a toy example with two user-defined commands:</p>
+
+<pre><code>define set_i_to_12345
+  set $i=12345
+  printf &quot;$i set to %u\n&quot;, $i
+end
+
+define print_i
+  printf &quot;Now $i is %u\n&quot;, $i
+end
+</code></pre>
+
+<p>Execute <code>print_i</code> after <code>set_i_to_12345</code>, and we&rsquo;ll see</p>
+
+<p><img src="global_vars.png" alt="" /></p>
+
+<p>I.e. the variable <code>$i</code>, defined inside <code>set_i_to_12345</code>, is visible for other user-defined commands. Moreover, the variable can be modified by other user-defined commands. Let&rsquo;s define another user-defined command</p>
+
+<pre><code>define change_i_to_5678
+  set $i=5678
+  printf &quot;$i is set to %u\n&quot;, $i
+end
+</code></pre>
+
+<p>and execute it. The value of the variable <code>$i</code> will be changed to <code>5678</code>:</p>
+
+<p><img src="global_vars2.png" alt="" /></p>
+
+<h1 id="arguments">Arguments</h1>
+
+<p>Arguments of a user-defined command are variables <code>$arg0</code>, <code>$arg1</code>, <code>$arg2</code> etc. For example,</p>
+
+<pre><code>define print_string
+  printf &quot;%s\n&quot;, $arg0
+end
+</code></pre>
+
+<p>Now we can pass a string as an argument to <code>print_string</code> and the command will print the string:</p>
+
+<p><img src="args1.png" alt="" /></p>
+
+<p>If we pass no arguments, we&rsquo;ll get an error message:</p>
+
+<p><img src="args2.png" alt="" /></p>
+
+<p>To avoid the error, we should check the variable <code>$argc</code> somewhere inside our user-defined command with <code>if...else</code> statement (please find more about conditional execution in the next sections):</p>
+
+<pre><code>define smart_print_string
+  if $argc==1
+    printf &quot;%s\n&quot;, $arg0
+  else
+    printf &quot;How to use:\nsmart_print_string &lt;string to print&gt;\n&quot;
+  end
+end
+</code></pre>
+
+<p>As you probably already guess, the variable <code>$argc</code> contains the count of arguments passed to the user-defined command. If we execute <code>smart_print_string</code> without arguments, we&rsquo;ll get</p>
+
+<p><img src="args3.png" alt="" /></p>
+
+<p>Please note that arguments are the only <em>local</em> variables in a user-defined command.</p>
+
+<h1 id="objective-c-runtime-structures-as-arguments">Objective C runtime structures as arguments</h1>
+
+<p>A really cool thing is we can pass Objective C runtime structures (classes, class instances, properties etc; in fact, all these objects are <a href="http://opensource.apple.com/source/objc4/objc4-437/runtime/objc-runtime-new.h">just C structures</a> in memory) as parameters to a user-defined command. For example, let <code>r0</code> contains a pointer to an instance of a class, and we want to know the name of the class. Let&rsquo;s define the following command:</p>
+
+<pre><code>define what_is_class_name
+  po $arg0
+end
+</code></pre>
+
+<p>If we run the command and pass the pointer to an instance of a class (in <code>r0</code>), the command will print the class name and the instance address (we use <code>po</code> command to output information about the class instance to GDB console):</p>
+
+<p><img src="arg4.png" alt="" /></p>
+
+<p>You probably know that we can access Objective C runtime structures with square brackets <code>[]</code>. Unfortunately, we can&rsquo;t pass something in square brackets directly to the a user-defined command. For example, if <code>r0</code> points to an instance of <code>NSURLConnection</code>, we can&rsquo;t just execute</p>
+
+<pre><code>(gdb) what_is_class_name [$r0 currentRequest]
+</code></pre>
+
+<p>to get the information about the property <code>currentRequest</code>:</p>
+
+<p><img src="arg5.png" alt="" /></p>
+
+<p>A possible solution is to define a new variable, which points to the property <code>currentRequest</code>, and pass it into the user-defined command. However if we try to do it without typecasting, we will get another error:</p>
+
+<p><img src="arg6.png" alt="" /></p>
+
+<p>We should cast the pointer to <code>int</code>, and then pass the variable to the user-defined command:</p>
+
+<p><img src="arg7.png" alt="" /></p>
+
+<p>Another way is putting <code>[$r0 currentRequest]</code> to a variable and cast it to <code>int</code> inside our user-defined command:</p>
+
+<p><img src="arg8.png" alt="" /></p>
+
+<p>I know, it looks weird because the type of <code>currentRequest</code> is definitely <em>not</em> <code>int</code>, however we <em>need</em> to cast it to <code>int</code>. We will not discuss the reasons, sorry. Just take it as the rule :)</p>
+
+<h1 id="passing-variables-to-objective-c-methods">Passing variables to Objective C methods</h1>
+
+<p>We can pass variables and arguments (because arguments are variables too) to Objective C methods as parameters. For example, consider the following user-defined command:</p>
+
+<pre><code>define key_value_element
+  po [[$arg0 allKeys] objectAtIndex:$arg1]
+  po [[$arg0 allValues] objectAtIndex:$arg1]
+end
+</code></pre>
+
+<p>The command prints a key/value pair from <code>NSDictionary</code>. It takes a pointer to <code>NSDictionary</code> instance (in <code>$arg0</code>) and the number of the key/value pair to print (in <code>$arg1</code>). Then  <code>$arg1</code> is passed as a parameter to  <code>objectAtIndex</code> method to get objects for the key and value. For example, if <code>r0</code> points to an instance of <code>NSURLConnection</code>, we can use the command to print the second HTTP header key/value pair:</p>
+
+<p><img src="pass_var_to_method.png" alt="" /></p>
+
+<p>Please, pay attention that we can&rsquo;t pass <code>[[$r0 originalRequest] allHTTPHeaderFields]</code> directly to the  <code>key_value_element</code> command (see the previous section for details). First we have to cast it to <code>int</code> and wrap into a variable:</p>
+
+<pre><code>(gdb) set $headers=(int)[[$r0 originalRequest] allHTTPHeaderFields]
+</code></pre>
+
+<h1 id="passing-variables-to-c-functions">Passing variables to C functions</h1>
+
+<p>We can pass variables and arguments (because arguments are variables too) to Objective C methods as parameters. Here is an example user-defined command:</p>
+
+<pre><code>define string_length
+  set $length = (int)strlen((char*)$arg0)
+  printf &quot;The length is %u\n&quot;, $length
+end
+</code></pre>
+
+<p>Please, note that we have cast <code>$arg0</code> to <code>char*</code> and cast the returned value to <code>int</code>. This is a very important point! Calling C functions, we should cast function parameters and a returned value to primitive types as <code>char*</code>, <code>int</code> etc. Here is an example of how  <code>string_length</code> works:</p>
+
+<p><img src="string_length.png" alt="" /></p>
+
+<h1 id="conditional-execution">Conditional execution</h1>
+
+<p>To execute something conditionally in a user-defined command, we should use <code>if...else</code> statements. The syntax is simple:</p>
+
+<pre><code>if _&lt;condition&gt;_
+  _...do something here..._
+  else
+  _...do something else here..._
+end
+</code></pre>
+
+<p>or (without <code>else</code>):</p>
+
+<pre><code>if _&lt;condition&gt;_
+  _...do something here..._
+end
+</code></pre>
+
+<p>If we have read the previous sections, we probably already saw the following example:</p>
+
+<pre><code>define smart_print_string
+  if $argc==1
+    printf &quot;%s\n&quot;, $arg0
+  else
+    printf &quot;How to use:\nsmart_print_string &lt;string to print&gt;\n&quot;
+  end
+end
+</code></pre>
+
+<p>The condition in the example above is simple: we just check if the variable <code>$argc</code> is equal to <code>1</code>. We can use more complex conditions with almost all logical operations known from C/C++: <code>==</code> (is equal to), <code>!=</code> (is not equal to), <code>&amp;&amp;</code> (and), <code>||</code> (or) etc. The syntax is exactly as in C/C++.</p>
+
+<p>Also we can use nested <code>if...else</code> statements:</p>
+
+<pre><code>define smart_print_string
+  if $argc==1
+    if $arg0!=0
+      printf &quot;%s\n&quot;, $arg0
+    else
+      printf &quot;You have passed a zero pointer!\n&quot;
+    end
+  else
+    printf &quot;How to use:\nsmart_print_string &lt;string to print&gt;\n&quot;
+  end
+end
+</code></pre>
+
+<p>It works as follows</p>
+
+<p><img src="smart_print_string.png" alt="" /></p>
+
+<p>Moreover, sometimes we <em>must</em> use nested <code>if...else</code> statements. Let&rsquo;s try to &ldquo;optimize&rdquo; the code of  <code>smart_print_string</code> command. Remove the nested <code>if...else</code> statement and put both checks (<code>$argc==1</code> and <code>$arg0!=0</code>) to a single condition:</p>
+
+<pre><code>define smart_print_string_optimized
+  if $argc==1 &amp;&amp; $arg0!=0
+    printf &quot;%s\n&quot;, $arg0
+  else
+    printf &quot;How to use:\nsmart_print_string &lt;string to print&gt;\n&quot;
+    printf &quot;where &lt;string to print&gt; is not a zero pointer!\n&quot;
+  end
+end
+</code></pre>
+
+<p>Looks better, yeah? But if we try to run the command without arguments&hellip;</p>
+
+<p><img src="smart_print_string_optimized.png" alt="" /></p>
+
+<p>We got the error &ldquo;Missing argument 0 in user function&rdquo; because GDB parsed the condition  <code>$argc==1 &amp;&amp; $arg0!=0</code>  as follows:</p>
+
+<ol>
+<li>First GDB checked <code>$argc==1</code>, it was <code>false</code> because we did no pass any arguments to the command.</li>
+<li>It was not necessary to check <code>$arg0!=0</code>. Indeed, if <code>$argc==1</code> is <code>false</code>, then <code>$argc==1 &amp;&amp; $arg0!=0</code>  is <code>false</code> in any case. However, GDB checked <code>$arg0!=0</code> anyway. Of course, <code>$arg0</code> was not defined (remember? we did not pass any arguments), so GDB printed the error message.</li>
+</ol>
+
+<p>We should always keep in mind that GDB continue checking condition even it makes no sense (like in the example above).</p>
+
+<h1 id="loops">Loops</h1>
+
+<p>The loop statement is <code>while</code>:</p>
+
+<pre><code>while _&lt;condition&gt;_
+  _...do something here..._
+end
+</code></pre>
+
+<p>Nested loops are allowed. The rules for conditions are the same as for <code>if...else</code> (see the previous section for details). It is important to set correct conditions for <code>while</code>, otherwise we can run into infinite loop. E.g. the following loop will never end:</p>
+
+<pre><code>set $i = 1 
+while $i&lt;10
+  printf &quot;What? I do not increment $i inside the loop?\n&quot;
+  printf &quot;Oh sh... Stop the loop! Let me out!..\n&quot;
+end
+</code></pre>
+
+<p>Here is an example of user-defined command with <code>while</code> statement:</p>
+
+<pre><code>define s_count_a
+  set $count = 0
+  set $char = $arg0
+  while *(char*)$char!=0
+    if *(char*)$char == 'a'
+      set $count = $count + 1 
+    end
+    set $char = $char + 1
+  end
+  printf &quot;We saw 'a' %u times\n&quot;, $count
+end
+</code></pre>
+
+<p>The command counts <code>'a'</code> characters in a string. The string should be passed in <code>$arg0</code>:</p>
+
+<p><img src="s_count_a.png" alt="" /></p>
+
+<h1 id="conditions-with-c-functions-and-objective-c-methods-calling">Conditions with C functions and Objective C methods calling</h1>
+
+<p>We can use return values from Objective C methods and C functions in expressions for <code>if...else</code> and <code>while</code>. Calling C functions, we should cast parameters and return values to primitive types:</p>
+
+<pre><code>if (int)strcmp((char*)$string1, (char*)$string2) == 0
+  printf &quot;The strings are equal!\n&quot;
+end
+</code></pre>
+
+<p>We also can wrap the return value with a variable:</p>
+
+<pre><code>set $compare_result = (int)strcmp((char*)$string1, (char*)$string2)
+if $compare_result==0
+  printf &quot;The strings are equal!\n&quot;
+end
+</code></pre>
+
+<p>It is not necessary, but sometimes can make our code more readable.</p>
+
+<p>Here is a complete example of a user-defined command with C function calling in an <code>if...else</code> condition:</p>
+
+<pre><code>define compare_str
+  if (int)strcmp((char*)$arg0, (char*)$arg1) == 0
+    printf &quot;The strings are equal!\n&quot;
+  else
+    printf &quot;The strings are NOT equal!\n&quot;
+  end
+end
+</code></pre>
+
+<p>It works like this:</p>
+
+<p><img src="compare_str.png" alt="" /></p>
+
+<p>We can also use return values from Objective C methods to build conditions. Here is an example of a user-defined command:</p>
+
+<pre><code>define list_http_headers
+ set $count = (int)[[[$arg0 currentRequest] allHTTPHeaderFields] count]
+ set $i = 0
+ while $i &lt; $count
+   printf &quot;Header %u:\n&quot;, $i+1
+   po [[[[$arg0 currentRequest] allHTTPHeaderFields] allKeys] objectAtIndex:$i]
+   po [[[[$arg0 currentRequest] allHTTPHeaderFields] allValues] objectAtIndex:$i]
+   set $i = $i + 1
+ end
+end
+</code></pre>
+
+<p>The command takes a pointer to an instance of <code>NSURLConnection</code> (in <code>$arg0</code>) and prints a list of headers of <code>currentRequest</code>. In the example below, the pointer is in r0 register (BTW, it&rsquo;s a typical situation after break on  <code>-[NSURLConnection start]</code>):</p>
+
+<p><img src="list_http_headers.png" alt="" /></p>
+
+<h1 id="using-printf-for-pretty-looking-output">Using <code>printf</code> for pretty-looking output</h1>
+
+<p>The <code>printf</code> is used to print primitive types like <code>(char*)</code>, <code>int</code> etc. In some situation, it allows us to print something really nice and readable :) For example, let&rsquo;s rework our <code>list_http_headers</code> command. Let it prints pretty-looking pairs</p>
+
+<pre><code>&lt;HTTP header name&gt;: &lt;HTTP header value&gt;
+</code></pre>
+
+<p>The reworked <code>list_http_headers</code> command may look like</p>
+
+<pre><code>define printf_pretty_http_headers
+ set $all_headers = (int) [[$arg0 currentRequest] allHTTPHeaderFields]
+ set $count = (int)[[$request allHTTPHeaderFields] count]
+ set $i = 0
+ while $i &lt; $count
+   set $header = (char*)[[[[$all_headers allKeys] objectAtIndex:$i] description] UTF8String]
+   set $value = (char*)[[[[$all_headers allValues] objectAtIndex:$i] description] UTF8String]
+   printf &quot;%s: %s\n&quot;, $header, $value
+   set $i += 1
+ end
+ printf &quot;--- Total %u headers ---\n&quot;, $count
+end
+</code></pre>
+
+<p>The <code>list_http_headers</code> command used <code>po</code> to print the name/value pairs. So it was enough to pass a return value of  <code>objectAtIndex:</code> to <code>po</code>,  and - viola! - <code>po</code> prints a string. However, we cant pass a return value of <code>objectAtIndex:</code> to <code>printf</code>, because <code>objectAtIndex:</code> returns not a primitive type, but an object. This is the reason why we should go deeper :) through object&rsquo;s  <code>description</code> to <code>UTF8String</code>, which is a primitive type (it&rsquo;s a pointer to an array of chars) and can be printed with <code>printf</code>. It works like this:</p>
+
+<p><img src="printf_pretty_http_headers.png" alt="" /></p>
+
+<h1 id="summary">Summary</h1>
+
+<p>We can say a lot of things about user-defined GDB commands, but it&rsquo;s time to finish our discussion :) Finally, here are some pros and cons of user-defined GDB commands. Pros:</p>
+
+<ul>
+<li>Simple syntax.</li>
+<li>No third-part  interpreters (e.g. Python) are needed, no environment customization is required, user-defined commands just work.</li>
+</ul>
+
+<p>Cons:</p>
+
+<ul>
+<li>All variables are global (excepting arguments), idiotic typecasting, dummy condition checking and other stupid things.</li>
+<li>There is no ability to control GDB engine.</li>
+<li>User-defined commands are slow for even the most trivial tasks (e.g. printing a string). Really.</li>
+</ul>
+
+<h1 id="useful-links">Useful links</h1>
+
+<p>Actually, the only link I found is <a href="http://sourceware.org/gdb/onlinedocs/gdb/Define.html">User-defined Commands</a>.</p>
+
+<p>So it goes.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

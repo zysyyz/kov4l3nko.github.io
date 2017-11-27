@@ -1,0 +1,203 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		CVE-2014-1354: how to find a critical bug in iOS - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">CVE-2014-1354: how to find a critical bug in iOS</h1>
+		<div class="post-date">Mar 28, 2014</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#finding-a-bug">Finding a bug</a></li>
+<li><a href="#analyzing-the-bug">Analyzing the bug</a></li>
+<li><a href="#where-does-it-work">Where does it work?</a></li>
+</ul>
+</nav>
+		
+		
+
+<p>In this article we will find a critical bug in iOS Core Graphics. It will be a true old-style manual research; we will not use any automatic vulnerability scanners, code analysers, symbolic execution tools etc.</p>
+
+<h1 id="finding-a-bug">Finding a bug</h1>
+
+<p>We will use the following &ldquo;sandbox&rdquo;:</p>
+
+<ul>
+<li>iPhone 4</li>
+<li>iOS 7.0.4 with evasi0n jailbreak</li>
+<li>LLDB + debugserver</li>
+</ul>
+
+<p>We will test Mobile Safari. We are going to do the following:</p>
+
+<ol>
+<li>Choose an ancient multimedia file formal which is not used anymore but still supported by Mobile Safari.</li>
+<li>Write a fuzzer for the file format and fuzz Mobile Safari.</li>
+<li>…</li>
+<li>Profit? If no, just start from the beginning.</li>
+</ol>
+
+<p>Lets choose the multimedia format. Wikipedia says that WebKit (and, therefore, Mobile Safari) supports <a href="http://en.wikipedia.org/wiki/XBM">XBM</a>. The format is as old as mammoth&rsquo;s crap and nobody used it anymore. So, probably, the developers of WebKit and Mobile Safari do not test XBM support really careful. Ok, the multimedia format is chosen. Now let&rsquo;s read <a href="http://www.fileformat.info/format/xbm/egff.htm">the description of XBM</a> and find a sample of XBM file in the Internet. After a quick search, we have found the following XBM file:</p>
+
+<pre><code>#define test_width 16
+#define test_height 16
+static unsigned char test_bits[] = {
+     0xff, 0xff, 0x01, 0x80, 0xfd, 0xbf, 0x05, 0xa0, 0xf5, 0xaf, 0x15, 0xa8,
+     0xd5, 0xab, 0x55, 0xaa, 0x55, 0xaa, 0xd5, 0xab, 0x15, 0xa8, 0xf5, 0xaf,
+     0x05, 0xa0, 0xfd, 0xbf, 0x01, 0x80, 0xff, 0xff };
+</code></pre>
+
+<p>It looks like concentric squares:</p>
+
+<p><img src="concentric-square.png" alt="" /></p>
+
+<p>Let&rsquo;s &ldquo;damage&rdquo; the image. Of course, writing a fuzzer for XBM is a good idea, but I&rsquo;m too lazy to do it. So first will try to &ldquo;damage&rdquo; the image manually. For example, let&rsquo;s play with the first line in the image file (an image width) and open &ldquo;damaged&rdquo; images in Mobile Safari one by one. After several tries, we found that if the image width is big (&gt;100000), Mobile Safari crashes. E.g. Mobile Safari just closes without any messages if we try to open the following XBM image file:</p>
+
+<pre><code>#define test_width 123456
+#define test_height 16
+static unsigned char test_bits[] = {
+     0xff, 0xff, 0x01, 0x80, 0xfd, 0xbf, 0x05, 0xa0, 0xf5, 0xaf, 0x15, 0xa8,
+     0xd5, 0xab, 0x55, 0xaa, 0x55, 0xaa, 0xd5, 0xab, 0x15, 0xa8, 0xf5, 0xaf,
+     0x05, 0xa0, 0xfd, 0xbf, 0x01, 0x80, 0xff, 0xff };
+</code></pre>
+
+<h1 id="analyzing-the-bug">Analyzing the bug</h1>
+
+<p>Let&rsquo;s analyze the bug. Crash Mobile Safari under LLDB and see the backtrace:</p>
+
+<p><img src="mobile-safari-crash.png" alt="" /></p>
+
+<p>It looks like the function <code>argb32_image_mark</code> in <code>CoreGraphics</code> is the reason of the bug. If we reopen the image in Mobile Safari, breakpoint <code>argb32_image_mark</code> and trace it, we will see the following:</p>
+
+<pre><code>CoreGraphics`argb32_image_mark (at 0x2f96a970):
+...
+0x2f96a97a:  mov    r6, sp          ; r6 = sp
+0x2f96a97c:  mov    r5, r0          ; r5 = the first argument of argb32_image_mark
+...
+0x2f96a9a0:  ldr    r0, [r5, #4]    ; r0 = [the first argument + 4] = image width
+...
+0x2f96a9b0:  str    r0, [r6, #100]  ; save the image width to a local var
+...
+0x2f96a9d2:  ldr    r3, [r1, #12]   ; r3 = [the second argument + 12]
+...
+0x2f96a9ea:  ldr    r1, [r6, #100]  ; r1 = the image width
+...
+0x2f96a9f6:  adds   r0, r3, #6      ; r0 = r3 + 6
+0x2f96a9f8:  muls   r0, r1, r0      ; r0 = r1*r0
+0x2f96a9fa:  add.w  r2, r0, #96     ; r2 = r0 + 96
+...
+0x2f96aa04:  adds   r0, r2, #3      ; r0 = r2 + 3
+0x2f96aa06:  bic    r0, r0, #3      ; r0 = r0 &amp; 0xfffffff8
+0x2f96aa0a:  sub.w  r11, sp, r0     ; r11 = sp - r0
+0x2f96aa0e:  mov    sp, r11         ; sp = r11
+</code></pre>
+
+<p>Now we have</p>
+
+<pre><code>the new value of sp = sp - (([the second argument + 12] + 6) * the image width + 99) &amp; 0xfffffff8
+</code></pre>
+
+<p>Numerous experiments show that <code>[the second argument + 12]</code> is always zero. So</p>
+
+<pre><code>the new value of sp = sp - (6 * the image width + 99) &amp; 0xfffffff8
+</code></pre>
+
+<p>The function <code>argb32_image_mark</code> does not check parameters as it should, so if the image width is big, <code>sp</code> runs out of the memory allocated for stack. After that, <code>argb32_image_mark</code> calls <code>memset</code> and try to fill an unallocated memory range with zeros:</p>
+
+<pre><code>0x2f96aa10:  mov    r0, r11         ; destination address = the new value of sp
+0x2f96aa12:  movs   r1, #0          ; memset should zero the destination address
+0x2f96aa14:  blx    0x2fa339cc      ; call memset
+</code></pre>
+
+<p>It crashes <code>CoreGraphics</code>. This is the critical bug promised at the very beginning of the article :)</p>
+
+<h1 id="where-does-it-work">Where does it work?</h1>
+
+<p>The bug is reproduced with the following devices / iOS versions:</p>
+
+<ul>
+<li>iPhone 4 / iOS 7.0.4</li>
+<li>iPod Touch 4g / iOS 6.1.5 (10b400) — thanks <a href="http://habrahabr.ru/users/templier/">Templier</a> for testing</li>
+<li>iPad mini Retina / iOS 7.0.4 — thanks <a href="http://habrahabr.ru/users/templier/">Templier</a> for testing</li>
+<li>iPad mini Retina / iOS 7.0.6 — thanks <a href="http://habrahabr.ru/users/maxru/">maxru</a> for testing</li>
+<li>iPad Air / iOS 7.0.4 — thanks <a href="http://habrahabr.ru/users/ryad0m/">ryad0m</a> for testing</li>
+<li>iPad Air / iOS 7.0.6 — thanks <a href="http://habrahabr.ru/users/ryad0m/">ryad0m</a> for testing</li>
+<li>iPhone 5 / iOS 6.1 — thanks <a href="http://habrahabr.ru/users/silvansky/">silvansky</a> for testing</li>
+<li>iPhone 5 / iOS 7.0.6 — thanks <a href="http://habrahabr.ru/users/yekver/">Yekver</a> for testing</li>
+<li>iPhone 5s / latest iOS 7.1 — thanks <a href="http://habrahabr.ru/users/anakros/">Anakros</a> for testing</li>
+</ul>
+
+<p>As you see it, the bug is quite old. If you wanna test your device / iOS version, just open the link with your Mobile Safari: <a href="test.xbm">test.xbm</a></p>
+
+<p>So it goes.</p>
+
+<p><strong>Update from May 12, 2014:</strong> I have reported this issue to Apple a month before the post was published. It&rsquo;s not fixed yet, even in iOS 7.1.1. It looks like they are overloaded with critical bugs and have no time to fix this one :(</p>
+
+<p><strong>Update from Jun 20, 2014:</strong> Apple wrote a mail. They are going to assign a CVE number to the bug and fix it. Well, better later then never&hellip;</p>
+
+<p><strong>Update from Jun 30, 2014</strong>:</p>
+
+<blockquote>
+<p>APPLE-SA-2014-06-30-3 iOS 7.1.2</p>
+
+<p>iOS 7.1.2 is now available and addresses the following:</p>
+
+<p>&hellip;</p>
+
+<p>CoreGraphics</p>
+
+<p>Available for:  iPhone 4 and later, iPod touch (5th generation) and later, iPad 2 and later</p>
+
+<p>Impact:  Viewing a maliciously crafted XBM file may lead to an unexpected application termination or arbitrary code execution</p>
+
+<p>Description:  An unbounded stack allocation issue existed in the handling of XBM files. This issue was addressed through improved bounds checking.</p>
+
+<p>CVE-ID</p>
+
+<p>CVE-2014-1354 : Dima Kovalenko of codedigging.com</p>
+</blockquote>
+
+<p>So finally they fixed the bug in iOS 7.1.2.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

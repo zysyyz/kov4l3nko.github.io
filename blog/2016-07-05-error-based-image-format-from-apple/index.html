@@ -1,0 +1,308 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Error-based image format from Apple - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Error-based image format from Apple</h1>
+		<div class="post-date">Jul 5, 2016</div>
+		
+		
+
+<p>The research is kind of a geek joke for reverse engineers, please don&rsquo;t take it seriously.</p>
+
+<h1 id="a-quick-word-on-netpbm-image-formats">A quick word on Netpbm image formats</h1>
+
+<p>Netpbm formats are quite old image formats developed in the 1980s. However, the latest Safari browsers (Safari 9.1.1 on Mac and MobileSafari on iOS 9.x) still support them.</p>
+
+<p>Here is a test example for your browser:</p>
+
+<p><img src="example.pbm" alt="" /></p>
+
+<p>If you see a small (24x7 pixels) &ldquo;FEEP&rdquo; above, your browser supports Netpbm formats. If you see nothing, try to open this page with a desktop Safari on Mac or MobileSafari on iOS 9.x.</p>
+
+<p>Netpbm image is a text file with <code>.pbm</code> extension. I&rsquo;ll not describe Netpbm formats in details, they are plaintext and quite simple. Please take 5 min to read the <a href="https://en.wikipedia.org/wiki/Netpbm_format">Netpbm format</a> article in Wikipedia.</p>
+
+<h1 id="pbmreadint"><code>pbmReadInt(...)</code></h1>
+
+<p>Let&rsquo;s consider a simple <a href="https://en.wikipedia.org/wiki/Netpbm_format#PGM_example">portable graymap</a> image file:</p>
+
+<pre><code>P2		# a portable graymap image should start with P2
+1 1		# image weigh and height (it's 1x1)
+1		# maximum of grey between black and white
+0		# the only pixel, it's black
+</code></pre>
+
+<p>The image is 1x1, the only pixel is black. MobileSafari on iOS 9.x process the image as follows:</p>
+
+<ol>
+<li>The browser detects image type by calling <code>ImageIO:_CGImagePluginIdentifyPBM(...)</code></li>
+<li>Then it calls <code>ImageIO:_CGImagePluginInitPBM(...)</code> to detect the exact image type (it reads <code>P2</code> at the beginning of the file) and read its weigh, height, and a maximum of grey between black and white.</li>
+<li>Finally, <code>ImageIO:copyImageBlockSetPBM(...)</code> is called to read the image pixel array (in our case, the only element in the array is <code>0</code>).</li>
+</ol>
+
+<p><strong>Note!</strong> If you wanna see the calls, open MobileSafari, open a tab, attach your debugger to a newly started <code>com.apple.WebKit.WebContent</code> process and breakpoint</p>
+
+<pre><code>ImageIO:_CGImagePluginIdentifyPBM
+ImageIO:_CGImagePluginInitPBM
+ImageIO:copyImageBlockSetPBM
+</code></pre>
+
+<p>I&rsquo;d recommend to use a jailbroken iOS 9.x device <a href="../2016-04-27-debugging-ios-binaries-with-lldb/">with LLDB</a>. ■</p>
+
+<p>As you see it, it was needed to read some integers, separated by spaces/tabs/newlines, from a plain text to parse the <code>.pbm</code> file above. So Apple designed a class, which represents a <code>.pbm</code> image file. The <code>ImageIO</code> binary does not contain symbols, therefore let&rsquo;s call the class <code>PBMFileObject</code>. The class has a dedicated method to read integers from a plain text. The method is <code>ImageIO:pbmReadInt(...)</code>, its prototype looks like</p>
+
+<pre><code>unsigned int32 PBMFileObject::pbmReadInt()
+</code></pre>
+
+<p>Every time we call <code>pbmReadInt(...)</code>, it returns the next integer from a <code>.pbm</code> file. The method contains a funny error.</p>
+
+<h1 id="the-error-a-char-is-a-digit-45">The error: a <code>-</code> char is a digit <code>45</code></h1>
+
+<p>The <code>pbmReadInt(...)</code> in iOS 9.x implements a (very primitive) <a href="https://en.wikipedia.org/wiki/Finite-state_machine">finite-state machine</a>. It&rsquo;s based in the following table of 256 bytes (here is a memory dump from LLDB console on my iPad mini 2):</p>
+
+<pre><code>(lldb) mem read $x8 -c 0x100
+0x19db6e660: ff ff ff ff ff ff ff ff ff fd fc ff ff fd ff ff  ????????????????
+0x19db6e670: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e680: fd ff ff fe ff ff ff ff ff ff ff ff ff 2d ff ff  ?????????????-??
+0x19db6e690: 00 01 02 03 04 05 06 07 08 09 ff ff ff ff ff ff  ..........??????
+0x19db6e6a0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e6b0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e6c0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e6d0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e6e0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e6f0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e700: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e710: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e720: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e730: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e740: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+0x19db6e750: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff  ????????????????
+</code></pre>
+
+<p>In the binary, the table is called as <code>IntTable</code>. If we apply <code>IntTable</code> to a usual ASCII/ANSI table, we get</p>
+
+<pre><code>ANSCII/ANSI code      Byte from the table
+-----------------     -------------------
+00    NUL             ff
+01    STX             ff
+02    SOT             ff
+03    ETX             ff
+04    EOT             ff
+05    ENQ             ff
+06    ACK             ff
+07    BEL             ff
+08    BS              ff
+09    HT              fd
+0A    LF              fc
+0B    VT              ff
+0C    FF              ff
+0D    CR              fd
+0E    SO              ff
+0F    SI              ff
+10    DLE             ff
+11    DC1             ff
+12    DC2             ff
+13    DC3             ff
+14    DC4             ff
+15    NAK             ff
+16    SYN             ff
+17    ETB             ff
+18    CAN             ff
+19    EM              ff
+1A    SUB             ff
+1B    ESC             ff
+1C    FS              ff
+1D    GS              ff
+1E    RS              ff
+1F    US              ff
+20    [Space]         fd
+21    !               ff
+22    &quot;               ff
+23    #               fe
+24    $               ff
+25    %               ff
+26    &amp;               ff
+27    '               ff
+28    (               ff
+29    )               ff
+2A    *               ff
+2B    +               ff
+2C    ,               ff
+2D    -               2d
+2E    .               ff
+2F    /               ff
+30    0               00
+31    1               01
+32    2               02
+33    3               03
+34    4               04
+35    5               05
+36    6               06
+37    7               07
+38    8               08
+39    9               09
+3A    :               ff
+3B    ;               ff
+3C    &lt;               ff
+3D    =               ff
+3E    &gt;               ff
+3F    ?               ff
+40    @               ff
+...all remaining ASCII/ANSI codes are ff
+</code></pre>
+
+<p>In fact, the table above marks ASCII/ANSI codes:</p>
+
+<pre><code>; Separators:
+fd: 09 (Tab)		
+	13 (Return)
+	20 (Space)
+	
+; Comments:
+fe: 23 (#)				; start comment
+
+; New line
+fc: 0A (New line)		; a new line (also, it's end of a comment)
+	
+; A minus (note it, it's important!)
+2d: 2d (-)
+	
+; Digits:
+00-09: 0-9 (decimal digits from zero to nine)
+	
+; Shouldn't happen outside comments:
+ff: ...
+</code></pre>
+
+<p><code>pbmReadInt(...)</code> does the job as follows, step by step:</p>
+
+<ol>
+<li><p>At the very beginning, set the result to <code>0</code>.</p></li>
+
+<li><p>Call <code>ImageIO::pbmReadChar(...)</code> to read a single char from a <code>.pbm</code> file.</p></li>
+</ol>
+
+<p><strong>Note!</strong> <code>pbmReadChar(...)</code> reads the char, then check the <code>IntTable</code>. If the char code is <code>fe</code> (it&rsquo;s a comment start <code>#</code>), <code>pbmReadChar(...)</code> start reading next chars one by one. <code>pbmReadChar(...)</code> checks char codes in <code>IntTable</code> and just skips the chars until <code>fc</code> is faced (a new line, end of the comment). So <code>pbmReadChar(...)</code> always skips comments. ■</p>
+
+<ol>
+<li><p>Use <code>IntTable</code> to check the char:</p>
+
+<ul>
+<li><p>for <code>fd</code> or <code>fc</code>:</p>
+
+<ul>
+<li>if the previous char was not a digit, just skip it and read next char (go to the previous step)</li>
+<li>if the previous char was a digit, exit <code>pbmReadInt(...)</code> and return the result</li>
+</ul></li>
+
+<li><p><code>ff</code>, something goes wrong, the char should not appear outside a comment, <code>pbmReadInt(...)</code> exits with error code <code>0xffffffff</code>.</p></li>
+
+<li><p><code>00</code>&hellip;<code>09</code> is a digit (<code>00</code> is &ldquo;zero&rdquo;, <code>01</code> is &ldquo;one&rdquo;, etc). Go to the next step.</p></li>
+
+<li><p><code>2d</code> (a &ldquo;minus&rdquo; char) is also&hellip; a digit! It&rsquo;s stupid, but anyway go to the next step.</p></li>
+</ul></li>
+
+<li><p>If the char is a digit (a &ldquo;minus&rdquo; char is also considered as a digit), use <code>IntTable</code> to transform char to an integer:</p>
+
+<ul>
+<li>for <code>0x30</code>, <code>0x31</code>, &hellip;, <code>0x39</code> ASCII chars we have <code>0</code>, <code>1</code>, &hellip;, <code>9</code> correspondignly</li>
+<li>for <code>0x2d</code> ASCII char we have&hellip; the integer <code>45</code>!</li>
+</ul>
+
+<p>Then add the integer to the result</p>
+
+<pre><code>&lt;result&gt; = &lt;result&gt; * 10 + &lt;the integer&gt;
+</code></pre>
+
+<p>and go to step 2.</p></li>
+</ol>
+
+<p><strong>Note!</strong> I&rsquo;ve explained the <code>pbmReadInt(...)</code> code logic in a (more or less) simple way. I made no references to <code>pbmReadInt(...)</code> machine code at all, but reversing the code took some time for me :)</p>
+
+<p><img src="re_drafts.jpg" alt="re_drafts.jpg" /></p>
+
+<p>■</p>
+
+<p>As we see it, <code>pbmReadInt(...)</code> considers the <code>-</code> char as a digit of value <code>45</code>. Obviously, it&rsquo;s an error, but&hellip; why don&rsquo;t we use it for fun? :)</p>
+
+<h1 id="the-portable-bitmap-minus-format">The Portable Bitmap Minus format</h1>
+
+<p>Ok, what if we use <em>only</em> &ldquo;munis&rdquo; chars in <code>.pbm</code> file? No decimal digits, no comments, no newlines, but only &ldquo;munises&rdquo; and spaces. To be more precise:</p>
+
+<ol>
+<li>A <code>.pbm</code> file starts with <code>P2</code></li>
+<li>Further, the file format is the same as the <a href="https://en.wikipedia.org/wiki/Netpbm_format#PGM_example">portable graymap format</a>, but we only allowed to use <code>-</code> and spaces.</li>
+<li>As result, we can use only <code>45</code>-based integers: <code>-</code> is <code>45</code>, <code>--</code> is <code>45+45*10=495</code>, <code>---</code> is <code>45+45*10+45*100=4995</code> etc.</li>
+<li>The results should be viewed with MobileSafari on iOS 9.x device :)</li>
+</ol>
+
+<p>I&rsquo;d call such error-based format a &ldquo;Portable Bitmap Minus&rdquo; format, he-he&hellip; :)</p>
+
+<p>Ok, let&rsquo;s try! Here is (probably, the simplest) example <code>test.pbm</code>. Here is a black square 45x45 pixels:</p>
+
+<pre><code>P2 - - - -
+</code></pre>
+
+<p>Insert the image in HTML page</p>
+
+<pre><code>&lt;html&gt;
+&lt;head&gt;&lt;title&gt;Test exotic formats&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;
+	&lt;h1&gt;Test PBM&lt;/h1&gt;
+	&lt;img src=&quot;test.pbm&quot;&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>and load with MobileSafari. It looks like:</p>
+
+<p><img src="screen.png" alt="" /></p>
+
+<p>Well, it works! We see a black square. Malevich should be proud :) I&rsquo;d like to draw something more beautiful that just a black square, but I&rsquo;m a crappy artist.</p>
+
+<p>So it goes.</p>
+
+<p><strong>P.S.</strong> If I try to open the black-square example above in my desktop Safari, it stuck and stop responding&hellip; :) It wold be interesting to look inside <code>pbmReadInt</code> on desktop. Ha-ha!..</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

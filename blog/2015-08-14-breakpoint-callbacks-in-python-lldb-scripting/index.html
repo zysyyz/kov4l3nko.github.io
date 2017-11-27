@@ -1,0 +1,132 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Breakpoint callbacks in LLDB Python scripts - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Breakpoint callbacks in LLDB Python scripts</h1>
+		<div class="post-date">Aug 14, 2015</div>
+		
+		<p>Today we talk about breakpoint callbacks in LLDB Python scripts.<!-- more --> Setting breakpoints is easy. For example, write the Python script:</p>
+
+<pre><code># This is test.py 
+	
+import lldb
+	
+def test(debugger, command, result, internal_dict):
+    &quot;&quot;&quot; Just a test command to set a breakpoint &quot;&quot;&quot;
+    target = debugger.GetSelectedTarget()
+    breakpoint = target.BreakpointCreateByName(&quot;SSLWrite&quot;)
+	
+def __lldb_init_module(debugger, internal_dict):
+    debugger.HandleCommand('command script add -f test.test test')
+</code></pre>
+
+<p>The scripts implements a command <code>test</code>. The command sets a breakpoint on <code>SSLWrite</code>.</p>
+
+<p>Name the file <code>test.py</code>, save it to a hard drive. Then ssh your iOS device and run <code>debugserver</code> on the device. Then run LLDB on the host and run the <code>process connect ...</code> command to connect the device. Finally, load the script, run <code>test</code>, and list breakpoints:</p>
+
+<pre><code>(lldb) command script import path/to/test.py
+(lldb) test
+(lldb) breakpoint list 
+Current breakpoints:
+2: name = 'SSLWrite', locations = 1, resolved = 1, hit count = 0
+  2.1: where = Security`SSLWrite, address = 0x335fb4dc, resolved, hit count = 0
+</code></pre>
+
+<p>See? The breakpoint was set, it works :) Now lets make the debugger doing something after the breakpoint hits. For this purpose, we can use <em>a callback</em>.  Let&rsquo;s modify the script:</p>
+
+<pre><code># This is test.py 
+
+import lldb
+	
+def test(debugger, command, result, internal_dict):
+    &quot;&quot;&quot; Just a test command to set a breakpoint &quot;&quot;&quot;
+    target = debugger.GetSelectedTarget()
+    breakpoint = target.BreakpointCreateByName(&quot;SSLWrite&quot;)
+    # add a callback to the breakpoint
+    breakpoint.SetScriptCallbackFunction('test.breakpoint_callback')
+	
+# This is the callback function, it does nothing useful but says &quot;Hit!&quot;
+def breakpoint_callback(frame, bp_loc, dict):
+    print &quot;Hit!&quot;
+	
+def __lldb_init_module(debugger, internal_dict):
+    debugger.HandleCommand('command script add -f test.test test')
+</code></pre>
+
+<p>Here, the main point is <code>breakpoint.SetScriptCallbackFunction(...)</code>. It looks like the method was introduced in the commit <a href="https://www.mail-archive.com/lldb-commits@cs.uiuc.edu/msg01637.html">r205494</a>. However, at the moment, it is <em>not yet documented</em> in <a href="http://lldb.llvm.org/python_reference/index.html">the official LLDB Python reference</a>. And even if you know the exact method&rsquo;s name, Google gives you no more that 20 pages with almost useless info. I hope they will add the description of this cool method to the official docu soon.</p>
+
+<p>Ok, reload the script and test the <code>test</code> command:</p>
+
+<pre><code>(lldb) breakpoint delete 
+About to delete all breakpoints, do you want to do that?: [Y/n] y
+All breakpoints removed. (1 breakpoint)
+(lldb) test 
+(lldb) breakpoint list 
+Current breakpoints:
+3: name = 'SSLWrite', locations = 1, resolved = 1, hit count = 0
+    Breakpoint commands:
+      return test.breakpoint_callback(frame, bp_loc, internal_dict)
+	  
+  3.1: where = Security`SSLWrite, address = 0x335fb4dc, resolved, hit count = 0  
+</code></pre>
+
+<p>Continue the process. As soon as the process calls <code>SSLWrite</code>, we see:</p>
+
+<pre><code>(lldb) c
+Process 395 resuming
+(lldb) Hit!
+Process 395 stopped
+* thread #5: tid = 0x7dd5, 0x335fb4dc Security`SSLWrite, name = 'com.apple.NSURLConnectionLoader', stop reason = breakpoint 3.1
+    frame #0: 0x335fb4dc Security`SSLWrite
+Security`SSLWrite:
+-&gt;  0x335fb4dc &lt;+0&gt;: push   {r4, r5, r6, r7, lr}
+    0x335fb4de &lt;+2&gt;: add    r7, sp, #0xc
+    0x335fb4e0 &lt;+4&gt;: push.w {r8, r10, r11}
+    0x335fb4e4 &lt;+8&gt;: sub    sp, #0xc
+</code></pre>
+
+<p>So it works :) You can download the script <a href="test.py">here</a>.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

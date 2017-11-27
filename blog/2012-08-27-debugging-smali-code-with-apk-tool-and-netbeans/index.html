@@ -1,0 +1,95 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Debugging Smali code with apk-tool and NetBeans - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Debugging Smali code with apk-tool and NetBeans</h1>
+		<div class="post-date">Aug 27, 2012</div>
+		
+		<p>Ho-ho-ho, it works now! Here is a (more or less detailed) instruction to debug a Smali code of a third-part Android application. To debug Smali code with apk-tool, you need</p>
+
+<ol>
+<li><p><a href="http://code.google.com/p/android-apktool/downloads/detail?name=apktool1.4.1.tar.bz2&amp;can=1&amp;q=">Apk-tool 1.4.1</a> and <a href="http://netbeans.org/downloads/6.8/index.html">NetBeans 6.8</a>. <strong>Use these versions, not the latest ones! Currently, the latest versions of apk-tool and NetBeans do not allow to debug Smali code.</strong></p></li>
+
+<li><p>Java, JDK and other stuff installed in your system to make Apk-tool and  NetBeans working</p></li>
+</ol>
+
+<p>The step-by-step instruction:</p>
+
+<ol>
+<li><p>Decode your .apk file to <code>out</code> directory, use <code>-d</code> option:`java -jar apktool.jar d -d my.app.apk out</p></li>
+
+<li><p>Add <code>android:debuggable=&quot;true&quot;</code> attribute to <code>&lt;application&gt;</code> section in <code>out/AndroidManifest.xml</code> file.</p></li>
+
+<li><p>Build <code>out</code> directory to .apk file:</p>
+
+<pre><code>$ java -jar apktool.jar b -d out my.app.to.debug.apk
+</code></pre></li>
+
+<li><p>Sing and install <code>my.app.to.debug.apk</code> to the Android device used for debugging</p></li>
+
+<li><p>Delete <code>out/build</code> folderRun NetBeans, click &ldquo;File&rdquo; &ndash;&gt; &ldquo;New Project&rdquo;. Choose &ldquo;Java&rdquo; &ndash;&gt; &ldquo;Java Project with Existing Sources&rdquo;. Click &ldquo;Next&rdquo;.</p></li>
+
+<li><p>Specify <code>out</code> as &ldquo;Project Folder&rdquo;. Click &ldquo;Next&rdquo;.</p></li>
+
+<li><p>Add <code>out/smali</code> folder to the &ldquo;Source Package Folder&rdquo; list. Click &ldquo;Next&rdquo; and then &ldquo;Finish&rdquo;.</p></li>
+
+<li><p>Start <code>my.app.to.debug.apk</code> on the device, run DDMS, find your application on a list and click it. Note port information in last column - it should be something like <code>86xx / 8700</code>.</p></li>
+
+<li><p>In NetBeans, click &ldquo;Debug&rdquo; &ndash;&gt; &ldquo;Attach Debugger&rdquo; &ndash;&gt; select &ldquo;JPDA&rdquo; and set &ldquo;Port&rdquo; to <code>8700</code> (or whatever you saw in previous step). Rest of fields should be ok, click &ldquo;OK&rdquo;.</p></li>
+
+<li><p>Debugging session should start: you will see some info in a log and debugging buttons will show up in top panel.</p></li>
+
+<li><p>Set a breakpoint. You must select line with some instruction, you can&rsquo;t set breakpoint on lines starting with <code>.</code>, <code>:</code> or <code>#</code>.</p></li>
+
+<li><p>Trigger some action in application. If you run at breakpoint, then thread should stop and you will be able to debug step by step, watch variables, etc.</p></li>
+</ol>
+
+<p>I copy-pasted steps 9-13 from <a href="http://code.google.com/p/android-apktool/wiki/SmaliDebugging">the original instruction</a> (sorry, English is not my native language&hellip; and I&rsquo;m too lazy to &ldquo;produce unique content for the blog&rdquo;™, so just copy-pasted description of last 5 steps :)).</p>
+
+<p>Questions are welcome. Have a nice day :)</p>
+
+<p>P.S.  If you have problems with breakpoints, <a href="../2012-08-30-breakpoints-in-smali-code/">this</a> may help.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

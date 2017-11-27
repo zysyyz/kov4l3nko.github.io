@@ -1,0 +1,147 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Installing LLDB - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Installing LLDB</h1>
+		<div class="post-date">Feb 14, 2014</div>
+		
+		
+
+<p><strong>Warning!</strong> At the moment, the guide is obsolete. It makes sense to read <a href="../2016-04-27-debugging-ios-binaries-with-lldb/">the updated and extended version of this guide</a>.</p>
+
+<p>Today we will talk about installation of LLDB (on Mac OS) and debugserver (on iOS 7.0-7.0.4).</p>
+
+<h1 id="installation">Installation</h1>
+
+<p>You need LLDB installed on your Mac and the debugserver installed on your iOS device. To install LLDB on your Mac, just install the latest version of <a href="https://developer.apple.com/xcode/">XCode</a>. To install the debugserver on iOS device, mount <code>DeveloperDiskImage.dmg</code> and copy <code>debugserver</code> to a local folder on your Mac:</p>
+
+<pre><code>$ hdiutil attach /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/DeviceSupport/7.0.3\ \(11B508\)/DeveloperDiskImage.dmg
+$ cp /Volumes/DeveloperDiskImage/usr/bin/debugserver .
+</code></pre>
+
+<p>Then create <code>entitlements.plist</code></p>
+
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/ PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+&lt;dict&gt;
+	&lt;key&gt;com.apple.springboard.debugapplications&lt;/key&gt; &lt;true/&gt;
+	&lt;key&gt;run-unsigned-code&lt;/key&gt;
+	&lt;true/&gt;
+	&lt;key&gt;get-task-allow&lt;/key&gt; &lt;true/&gt; &lt;key&gt;task_for_pid-allow&lt;/key&gt; &lt;true/&gt;
+&lt;/dict&gt; 
+&lt;/plist&gt;
+</code></pre>
+
+<p>and use it to sign <code>debugserver</code></p>
+
+<pre><code>$ codesign -s - --entitlements entitlements.plist -f debugserver
+</code></pre>
+
+<p>Finally, copy the signed <code>debugserver</code> to <code>/usr/bin/</code> on your iOS device (here and further we assume that the IP address of the device is <code>192.168.1.110</code>):</p>
+
+<pre><code>$ scp ./debugserver root@192.168.1.110:/usr/bin
+</code></pre>
+
+<p>It&rsquo;s done!</p>
+
+<h1 id="check-if-it-works">Check if it works</h1>
+
+<p>To check if LLDB+debugserver work correctly, SSH your iOS device and attach debugserver to a running process (in the example below, the process is Instagram, but you can attach debugserver to any process):</p>
+
+<pre><code># debugserver *:6666 -a Instagram
+</code></pre>
+
+<p>As result, in your SSH console you should see something similar to</p>
+
+<pre><code>debugserver-300.2 for armv7.
+Attaching to process Instagram...
+Spawning general listening thread.
+Spawning kqueue listening thread.
+Listening to port 6666 for a connection from *...
+</code></pre>
+
+<p>Now, start LLDB in your Mac console and connect debugserver:</p>
+
+<pre><code>$ lldb
+(lldb) platform select remote-ios
+(lldb) process connect connect://192.168.1.110:6666
+</code></pre>
+
+<p>In your SSH console you&rsquo;ll see:</p>
+
+<pre><code>Waiting for debugger instructions for process 0.
+</code></pre>
+
+<p>Wait, wait, wait… it can take 1-3 minutes to connect (why so long? I don&rsquo;t know). Finally, in your Mac console you should see something like</p>
+
+<pre><code>Process 2962 stopped
+* thread #1: tid = 0x1902c, 0x37db4a8c libsystem_kernel.dylib`mach_msg_trap + 20, queue = 'com.apple.main-thread, stop reason = signal SIGSTOP
+    frame #0: 0x37db4a8c libsystem_kernel.dylib`mach_msg_trap + 20
+libsystem_kernel.dylib`mach_msg_trap + 20:
+-&gt; 0x37db4a8c:  pop    {r4, r5, r6, r8}
+   0x37db4a90:  bx     lr
+   
+libsystem_kernel.dylib`mach_msg_overwrite_trap:
+   0x37db4a94:  mov    r12, sp
+   0x37db4a98:  push   {r4, r5, r6, r8}
+(lldb)
+</code></pre>
+
+<p>This means LLDB+debugserver work just fine and you can start debugging. If you need more information about attaching debugserver to already running process, check the next section.</p>
+
+<h1 id="it-doesn-t-work-what-to-do">It doesn&rsquo;t work, what to do?</h1>
+
+<p>Sometimes <code>debugserver</code> works incorrectly or does not work at all becuase of permissions. SSH your iOS device and check  <code>debugserver</code> permissions:</p>
+
+<pre><code># ls -l /usr/bin/debugserver
+</code></pre>
+
+<p>The correct permissions are</p>
+
+<pre><code>-rwxr-xr-x 1 root wheel 1100912 Feb 13 15:30 /usr/bin/debugserver
+</code></pre>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

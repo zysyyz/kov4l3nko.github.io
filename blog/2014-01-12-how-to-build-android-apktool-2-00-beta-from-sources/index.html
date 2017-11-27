@@ -1,0 +1,93 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		How to build android-apktool 2.00 (beta) from sources - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">How to build android-apktool 2.00 (beta) from sources</h1>
+		<div class="post-date">Jan 12, 2014</div>
+		
+		
+
+<p>Android-apktool 2.00 promises a lot of cool things: Smali/Backsmali 2.0, Smali debugging (last time we saw this great feature in android-apktool 1.4.1, it broke in 1.4.2 and later releases, and now it&rsquo;s back!), numerous bugfixes etc. The only problem is the version 2.00 is not released at the moment.<!-- more --> It&rsquo;s still in beta, no compiled JARs are available on <a href="https://code.google.com/p/android-apktool/">the download page</a>:</p>
+
+<p><img src="no-download.png" alt="" /></p>
+
+<p>So this post is for reverse engineers who want to build android-apktool of version 2.00 (beta) from sources and play with all that cool stuff right now :) Here is a detailed 1-2-3 steps instruction for Windows (it&rsquo;s based on <a href="https://code.google.com/p/android-apktool/wiki/BuildApktool">the wiki page</a>, I just added some screenshots and notes).</p>
+
+<h1 id="step-1">Step 1</h1>
+
+<p>Check prerequisites:</p>
+
+<ul>
+<li>Windows PC</li>
+<li>Java 1.7 installed</li>
+<li><code>aapt.exe</code> in PATH</li>
+</ul>
+
+<h1 id="step-2">Step 2</h1>
+
+<p>Download <a href="https://android-apktool.googlecode.com/archive/wip-2.0.zip">ZIP archive with the latest sources</a> and unzip it to any local folder, e.g. to <code>d:\~temp\android-apktool\</code>. By the way, if you have no <code>aapt.exe</code> on your PC, you can find it in <code>d:\~temp\android-apktool\brut.apktool\apktool-lib\src\main\resources\prebuilt\aapt\windows\</code> and add it to your PATH after the second step.</p>
+
+<h1 id="step-3">Step 3</h1>
+
+<p>Open CMD console, go to <code>d:\~temp\android-apktool\</code>, and run</p>
+
+<pre><code>gradlew.bat build fatJar
+</code></pre>
+
+<p>Building is started now:</p>
+
+<p><img src="apktool-build-start.png" alt="" /></p>
+
+<p>After 3-5 minutes, you should see:</p>
+
+<p><img src="apktool-build-end.png" alt="" /></p>
+
+<p>Well, now just go to <code>d:\~temp\android-apktool\brut.apktool\apktool-cli\build\libs\</code> and find the <code>.jar</code> file there. Check if it is the JAR you need:</p>
+
+<p><img src="apktool-build-started.png" alt="" /></p>
+
+<p>Yes, it was so easy :)</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

@@ -1,0 +1,318 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Decrypting apps from AppStore - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Decrypting apps from AppStore</h1>
+		<div class="post-date">Mar 1, 2016</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#the-sandbox">The sandbox</a></li>
+<li><a href="#preparations">Preparations</a></li>
+<li><a href="#multiple-architectures">Multiple architectures</a></li>
+<li><a href="#a-single-architecture-with-a-fat-header">A single architecture (with a fat header)</a></li>
+<li><a href="#a-single-architecture-without-a-fat-header">A single architecture (without a fat header)</a></li>
+<li><a href="#setting-cryptid-to-0">Setting cryptid to <code>0</code></a></li>
+<li><a href="#links">Links</a></li>
+</ul>
+</nav>
+		
+		
+
+<p>Another &ldquo;ultimate&rdquo; guide (he-he :)) to decrypting iOS applications from AppStore. It&rsquo;s based on my 2 years experience. I hope somebody finds it useful. Questions are welcome in comments.</p>
+
+<h1 id="the-sandbox">The sandbox</h1>
+
+<ul>
+<li>Mac with the latest OS X installed</li>
+<li><a href="http://sourceforge.net/projects/machoview/">MachOView</a> 2.4 (9200) installed on the Mac</li>
+<li>a jailbroken iOS device with OpenSSH</li>
+<li><a href="../2014-02-14-installing-lldb/installing-lldb.md">LLDB installed on the iPhone</a></li>
+</ul>
+
+<h1 id="preparations">Preparations</h1>
+
+<p>Install the app you want to disassemble, e.g. Samsung Content Viewer, to a jailbroken iOS device and start it. Then ssh the device and use <code>ps</code> command to list the running processes. Find the app in the list and note the executable location (usually <code>/var/mobile/Applications/...</code>):</p>
+
+<pre><code># ps ax
+  PID   TT  STAT      TIME COMMAND
+    1   ??  Ss     1:52.90 /sbin/launchd
+   19   ??  Ss     9:47.09 /usr/libexec/UserEventAgent (System)
+   20   ??  Ss     0:34.87 /usr/libexec/aosnotifyd
+   ...blah blah blah...
+   7267   ??  SXs    1:45.30 /var/mobile/Applications/90465493-2318-41AC-9624-E91697EB70DA/Samsung Content Viewer.app/Samsung Content Viewer
+   ...blah blah blah...
+   7471 s001  Ss     0:00.04 -sh
+   7472 s001  R+     0:00.01 ps ax
+</code></pre>
+
+<p>Use <code>scp</code> in Mac console to copy the executable to a local folder:</p>
+
+<pre><code>$ scp root@192.168.1.110:&quot;/var/mobile/Applications/90465493-2318-41AC-9624-E91697EB70DA/Samsung\ Content\ Viewer.app/Samsung\ Content\ Viewer&quot; ./
+</code></pre>
+
+<h1 id="multiple-architectures">Multiple architectures</h1>
+
+<p>Again, consider Samsung Content Viewer as an example of a multiple architectures executable. List the architectures:</p>
+
+<pre><code>$ otool -fh Samsung\ Content\ Viewer 
+Fat headers
+fat_magic 0xcafebabe
+nfat_arch 2
+architecture 0
+    cputype 12
+    cpusubtype 9
+    capabilities 0x0
+    offset 4096
+    size 399568
+    align 2^12 (4096)
+architecture 1
+    cputype 12
+    cpusubtype 11
+    capabilities 0x0
+    offset 405504
+    size 399568
+    align 2^12 (4096)
+Samsung Content Viewer (architecture armv7):
+Mach header
+      magic cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+ 0xfeedface      12          9  0x00          2    36       4364 0x00200085
+Samsung Content Viewer (architecture armv7s):
+Mach header
+      magic cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+ 0xfeedface      12         11  0x00          2    36       4364 0x00200085
+</code></pre>
+
+<p>Choose the architecture you want to disassemble, for example armv7, and remember <code>offset</code> from the output above (<code>4096</code> for armv7 in the output). Then use <code>otool</code> to find encrypted offset/size for the architecture you want to disassemble, e.g. for armv7:</p>
+
+<pre><code>$ otool -arch armv7 -l Samsung\ Content\ Viewer | grep crypt
+    cryptoff  8192
+    cryptsize 303104
+    cryptid   1
+</code></pre>
+
+<p>Now ssh the iOS device, connect <code>debugserver</code> to the application (remember? it&rsquo;s still running), then connect <code>lldb</code> to <code>debugserver</code> and find offset of the executable image in memory:</p>
+
+<pre><code>(lldb) image list Samsung\ Content\ Viewer
+[  0] 87CACFC1-CD0D-3572-A454-20EEB4C20DA6 0x0003e000 /var/mobile/Applications/90465493-2318-41AC-9624-E91697EB70DA/Samsung Content Viewer.app/Samsung Content Viewer (0x000000000003e000)
+</code></pre>
+
+<p>For the example above, the image offset is <code>0x0003e000</code>.</p>
+
+<p><strong>Warning!</strong> Two important things:</p>
+
+<ul>
+<li>The device architecture should be the same as the architecture we want to disassembly.</li>
+<li>If the executable was compiled with PIE (ASLR) option, the image offset changes each time application starts. ■</li>
+</ul>
+
+<p>Then dump the the encrypted part of the executable. Use the following lldb command:</p>
+
+<pre><code>(lldb) memory read --force --outfile ./decrypted.bin --binary --count &lt;cryptsize&gt; &lt;image offset&gt;+&lt;cryptoff&gt;
+</code></pre>
+
+<p>For Samsung Content Viewer:</p>
+
+<pre><code>(lldb) memory read --force --outfile ./decrypted.bin --binary --count 303104 0x0003e000+8192
+</code></pre>
+
+<p>Finally, backup the <code>Samsung\ Content\ Viewer</code> executable</p>
+
+<pre><code>$ cp Samsung\ Content\ Viewer Samsung\ Content\ Viewer-orig
+</code></pre>
+
+<p>and insert <code>decrypted.bin</code> into the executable</p>
+
+<pre><code>$ dd seek=12288 bs=1 conv=notrunc if=./decrypted.bin of=./Samsung\ Content\ Viewer
+</code></pre>
+
+<p>where <code>12288=4096+8192</code> is the offset for armv7 architecture (see the output of <code>otool -fh</code> above) plus <code>cryptoff</code>. Optionally, to make the executable suitable for some tools (e.g. <code>class-dump-z</code>), you can set <code>cryptid</code> to <code>0</code> (see &ldquo;Setting cryptid to <code>0</code>&rdquo; below).</p>
+
+<h1 id="a-single-architecture-with-a-fat-header">A single architecture (with a fat header)</h1>
+
+<p>For a single architecture with a fat header, e.g. for <code>Kik</code> executable, the dump looks like</p>
+
+<pre><code>$ otool -fh Kik 
+Fat headers
+fat_magic 0xcafebabe
+nfat_arch 1
+architecture 0
+    cputype 12
+    cpusubtype 9
+    capabilities 0x0
+    offset 16384
+    size 9533024
+    align 2^14 (16384)
+Kik-decrypted (architecture armv7):
+Mach header
+      magic cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+ 0xfeedface      12          9  0x00           2    51       5264 0x00218085
+</code></pre>
+
+<p>Use <code>otool</code> to find encrypted offset/size</p>
+
+<pre><code>$ otool -l Kik | grep crypt
+     cryptoff 16384
+    cryptsize 4374528
+      cryptid 1
+</code></pre>
+
+<p>Run the application on your iOS device and ssh the device. Then connect debugserver to the application, connect lldb to debugserver and find offset of the executable image in memory:</p>
+
+<pre><code>(lldb) image list Kik
+[  0] FB5FE5B3-7C7F-3FBC-A5FA-45BF437D0DE1 0x000f3000 /var/mobile/Applications/91C53383-3F9E-4656-9593-08FCFDA8ADCC/Kik-Release-8.7.0.1913.app/Kik (0x00000000000f3000)
+</code></pre>
+
+<p>The offset for <code>Kik</code> image is 0x000f3000.</p>
+
+<p><strong>Warning!</strong> If the executable was compiled with PIE (ASLR) flag, the image offset changes every application start. ■</p>
+
+<p>Let&rsquo;s dump the encrypted part of the application with the following lldb command:</p>
+
+<pre><code>(lldb) memory read --force --outfile ./decrypted.bin --binary --count &lt;cryptsize&gt; &lt;image offset&gt;+&lt;cryptoff&gt;
+</code></pre>
+
+<p>e.g. for Kik:</p>
+
+<pre><code>(lldb) memory read --force --outfile ./decrypted-kik.bin --binary --count 3801088 0x000f3000+16384
+3801088 bytes written to './decrypted.bin'
+</code></pre>
+
+<p>Finally, let&rsquo;s insert <code>decrypted.bin</code> into the executable:</p>
+
+<pre><code>$ dd seek=&lt;arch. offset + cryptoff&gt; bs=1 conv=notrunc if=./decrypted.bin of=./Kik
+</code></pre>
+
+<p>where</p>
+
+<ul>
+<li><code>arch. offset</code> came from <code>otool -fh Kik</code> output (this is the <code>offset</code> for architecture 0)</li>
+<li><code>cryptoff</code> came from <code>otool -l Kik | grep crypt</code> output</li>
+</ul>
+
+<p>For example, for <code>Kik</code> we have</p>
+
+<pre><code>$ dd seek=0x8000 bs=1 conv=notrunc if=./decrypted.bin of=./Kik
+3801088+0 records in
+3801088+0 records out
+3801088 bytes transferred in 5.966411 secs (637081 bytes/sec)
+</code></pre>
+
+<p>where <code>0x8000</code> = <code>arch. offset</code> (<code>0x4000</code> in hex) + <code>cryptoff</code> (<code>0x4000</code> in hex).</p>
+
+<p>Optionally, to make the executable suitable for some tools (e.g. <code>class-dump-z</code>), you can set <code>cryptid</code> to 0 (see “Setting cryptid to <code>0</code>” below).</p>
+
+<h1 id="a-single-architecture-without-a-fat-header">A single architecture (without a fat header)</h1>
+
+<p>For a single architecture binary without fat header, e.g. for <code>Instagram</code>, <code>otool</code> output looks like</p>
+
+<pre><code>$ otool -fh Instagram 
+Instagram:
+Mach header
+      magic cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+ 0xfeedface      12          9  0x00           2    57       6112 0x00218085
+</code></pre>
+
+<p>Use <code>otool</code> to find encrypted offset/size:</p>
+
+<pre><code>$ otool -l Instagram | grep crypt
+     cryptoff 16384
+    cryptsize 6733824
+      cryptid 1
+</code></pre>
+
+<p>Run the application on your iOS device and ssh the device. Then connect debugserver to the application, connect lldb to debugserver and find offset of the executable image in memory:</p>
+
+<pre><code>(lldb) image list Instagram
+[  0] BC3DD8FF-81FB-30B9-AB89-50B9F85D337C 0x00033000 /var/mobile/Containers/Bundle/Application/74FF094E-2B4B-4793-956C-7BB88FCB5D4A/Instagram.app/Instagram (0x0000000000033000)
+</code></pre>
+
+<p>The offset for <code>Instagram</code> image is <code>0x00033000</code>.</p>
+
+<p><strong>Warning!</strong> If the executable was compiled with PIE (ASLR) flag, the image offset changes every application start. ■</p>
+
+<p>Let&rsquo;s dump the encrypted part of the application with the following lldb command:</p>
+
+<pre><code>(lldb) memory read --force --outfile &lt;path to dump&gt;.bin --binary --count &lt;cryptsize&gt; &lt;image offset&gt;+&lt;cryptoff&gt;
+</code></pre>
+
+<p>e.g. for Instagram:</p>
+
+<pre><code>(lldb) memory read --force --outfile ~/decrypted-instagram.bin --binary --count 6733824 0x00033000+16384
+</code></pre>
+
+<p>Finally, let&rsquo;s insert decrypted bytes from <code>&lt;path to dump&gt;.bin</code> into the executable:</p>
+
+<pre><code>$ dd seek=&lt;cryptoff&gt; bs=1 conv=notrunc if=&lt;path to dump&gt;.bin of=&lt;path to the original executable&gt;
+</code></pre>
+
+<p>e.g. for Instagram</p>
+
+<pre><code>$ dd seek=16384 bs=1 conv=notrunc if=~/decrypted-instagram.bin of=./Instagram
+</code></pre>
+
+<p>Optionally, to make the executable suitable for some tools (e.g. <code>class-dump-z</code>), you can set <code>cryptid</code> to <code>0</code> (see “Setting cryptid to <code>0</code>” below).</p>
+
+<h1 id="setting-cryptid-to-0">Setting cryptid to <code>0</code></h1>
+
+<p>Just find the offset of <code>cryptid</code> with MachOView:</p>
+
+<p><img src="machoview-cryptid.png" alt="MachO View" /></p>
+
+<p>Double click on <code>Data</code> for <code>Crypt ID</code>, set it to <code>0</code> and press CMD+S to save the binary. Or, if you don&rsquo;t like to edit files in MachO View, open the executable in any hex editor, go to the offset and replace <code>1</code> with <code>0</code>.</p>
+
+<h1 id="links">Links</h1>
+
+<ul>
+<li><a href="http://rce64.wordpress.com/2013/01/26/decrypting-apps-on-ios-6-single-architecture-no-pieaslr/">Decrypting apps on iOS 6 – Part 1: single architecture</a></li>
+<li><a href="http://rce64.wordpress.com/2013/01/27/private-decrypting-apps-on-ios-6-multiple-architectures-and-pie/">Decrypting apps on iOS 6 – Part 2: multiple architectures and PIE</a></li>
+<li><a href="http://resources.infosecinstitute.com/ios-application-security-part-2-getting-class-information-of-ios-apps/">DECRYPTING IOS APPS</a></li>
+<li><a href="http://www.rsaconference.com/writable/presentations/file_upload/hta-r04a-hacking-ios-on-the-run-using-cycript.pdf">http://www.rsaconference.com/writable/presentations/file_upload/hta-r04a-hacking-ios-on-the-run-using-cycript.pdf</a></li>
+<li><a href="http://www.infointox.net/?p=114">http://www.infointox.net/?p=114</a></li>
+<li><a href="http://www.mandalorian.com/2013/05/decrypting-ios-binaries/">Decrypting iOS binaries</a></li>
+<li><a href="http://timourrashed.com/decrypting-ios-app/">Decrypting IOS app to access Class Information</a></li>
+</ul>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

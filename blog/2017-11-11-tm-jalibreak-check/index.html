@@ -1,0 +1,163 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>
+		Bypassing TicketMaster 1.23.0 jailbreak detection - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Bypassing TicketMaster 1.23.0 jailbreak detection</h1>
+		<div class="post-date">Nov 11, 2017</div>
+		
+		
+
+<p>In the blog post, we bypass <a href="https://itunes.apple.com/us/app/ticketmaster/id500003565">TicketMaster</a> jailbreak detection. It works for TicketMaster 1.23.0 (the laters version in AppStore for Nov 11, 2017). Maybe it will work for future versions as well, but it&rsquo;s not for sure.</p>
+
+<p>If we start Ticket Master 1.23.0 on a jailbroken iOS device, we see</p>
+
+<p><img src="jb.png" alt="The Jailbreak Detected Message" /></p>
+
+<p>Let&rsquo;s bypass it.</p>
+
+<h1 id="research">Research</h1>
+
+<p>Ok, lets do a quick research. Install the app from AppStore and decrypt the app binaries. Disassemble the main binary <code>Ticketmaster</code> and search for the string <code>&quot;Jailbreak Detected&quot;</code> in <code>__DATA.__cfstring</code> section. It looks like</p>
+
+<pre><code>cfstring_Jailbreak_Detected:
+0x0000000102e2a218 dq ___CFConstantStringClassReference, 0x7c8, aJailbreakDetec, 0x12 ; &quot;Jailbreak Detected&quot;, DATA XREF=-[LNAppDelegate showWonderfulDeviceAlert]+1852
+</code></pre>
+
+<p>Note the xref, it points to the ObjC method  <code>-[LNAppDelegate showWonderfulDeviceAlert]</code> (they think jailbroken iPhones are &ldquo;wonderful devices&rdquo;, so cute). Jump the xref and look at the method. It&rsquo;s &ldquo;flat&rdquo;, no code branches inside, so it can not &ldquo;decide&rdquo; to show the jailbreak detected alert or not. We need to go <del>deeper</del> up and find the method which calls <code>-[LNAppDelegate showWonderfulDeviceAlert]</code>.</p>
+
+<p>The only xrefs pointing to <code>-[LNAppDelegate showWonderfulDeviceAlert]</code> is</p>
+
+<p><img src="xref.png" alt="xref" /></p>
+
+<p>In the code of <code>-[LNAppDelegate applicationDidBecomeActive:]</code>, we see</p>
+
+<pre><code>; call +[UIDevice isWonderful], put the result to x0
+0x00000001001599d4 ldr  x1, [x8, #0x940] ; argument &quot;selector&quot; for method imp___stubs__objc_msgSend, &quot;isWonderful&quot;,@selector(isWonderful)
+0x00000001001599d8 bl   imp___stubs__objc_msgSend ; objc_msgSend
+</code></pre>
+
+<p>Then it checks <code>w0</code> and makes decision to show the jailbreak detected alert, or not:</p>
+
+<pre><code>; if w0 == 0 (no jailbreak detected), jump to 0x0000000100159de8 and go on
+0x0000000100159de4 cbz  w0, loc_10015a2d8
+; if w0 == 1 (jailbreak detected), show the alert:
+0x0000000100159de8 adrp x8, #0x10321e000
+...
+0x000000010015a2b0 adrp x8, #0x103008000 ; &amp;@selector(setTintColor:)
+0x000000010015a2b4 ldr  x1, [x8, #0x948] ; argument &quot;selector&quot; for method imp___stubs__objc_msgSend, &quot;showWonderfulDeviceAlert&quot;,@selector(showWonderfulDeviceAlert)
+0x000000010015a2b8 ldr  x19, [sp, #0x10]
+0x000000010015a2bc mov  x0, x19 ; argument &quot;instance&quot; for method imp___stubs__objc_msgSend
+0x000000010015a2c0 bl   imp___stubs__objc_msgSend ; objc_msgSend
+</code></pre>
+
+<p>After a quick look, the method  <code>+[UIDevice isWonderful]</code> appears in the private framework <code>TicketmasterUtilities</code>. Disassemble the binary <code>TicketmasterUtilities</code> and look at <code>+[UIDevice isWonderful]</code>. It&rsquo;s easy to see that the method is just a stub to call another code which checks some jailbreak-related stuff. Here is actually the code:</p>
+
+<pre><code> ___34+[UIDevice(Wonderful) isWonderful]_block_invoke:
+0x000000000002c1ec sub sp, sp, #0x50              ; Objective C Block defined at 0x613f0, DATA XREF=0x61400
+...
+; is Cydia installed? (if it is, the device is jailbroken)
+0x000000000002c22c ldr x21, #0x77c18              ; @selector(fileExistsAtPath:)
+0x000000000002c230 adr x2, #0x64ed0               ; @&quot;/Applications/Cydia.app&quot;
+0x000000000002c234 nop
+0x000000000002c238 mov x1, x21                    ; argument &quot;selector&quot; for method imp___stubs__objc_msgSend
+0x000000000002c23c bl  imp___stubs__objc_msgSend  ; objc_msgSend
+0x000000000002c240 cbz w0, loc_2c250
+...
+; is MobileSubstrate installed? (if it is, the device is jailbroken)
+0x000000000002c264 mov x22, x0
+0x000000000002c268 adr x2, #0x64ef0               ; @&quot;/Library/MobileSubstrate/MobileSubstrate.dylib&quot;
+0x000000000002c26c nop
+0x000000000002c270 mov x1, x21                    ; argument &quot;selector&quot; for method imp___stubs__objc_msgSend
+0x000000000002c274 bl  imp___stubs__objc_msgSend  ; objc_msgSend
+...
+; try to create /private/wonderful.txt and write &quot;This is a test.&quot; to the file
+; (if it's possible, the device is jailbroken)
+0x000000000002c2a4 ldr x1, #0x77c20               ; argument &quot;selector&quot; for method imp___stubs__objc_msgSend, @selector(writeToFile:atomically:encoding:error:)
+0x000000000002c2a8 adr x0, #0x64f10               ; argument &quot;instance&quot; for method imp___stubs__objc_msgSend, @&quot;This is a test.&quot;
+0x000000000002c2ac nop
+0x000000000002c2b0 adr x2, #0x64f30               ; @&quot;/private/wonderful.txt&quot;
+...etc
+</code></pre>
+
+<p>If all checks are passed, the application does not show the jailbreak detected alert.</p>
+
+<h1 id="bypassing">Bypassing</h1>
+
+<p>It&rsquo;s easy. Let&rsquo;s hook <code>+[UIDevice isWonderful]</code> and make it returning <code>0</code> in any case (make jailbroken devices <del>great</del> not &ldquo;wonderful&rdquo; again :)). Here is a simple <a href="https://www.frida.re">Frida</a> script:</p>
+
+<pre><code>/*
+    bypass_jb_tm.js
+    ---------------
+    The script bypasses TicketMaster 1.23.0 jailbreak detection
+    Created 2017-11-09 by Dima Kovalenko (kov4l3nko@gmail.com)
+    Tested with Frida 10.6.21 and TicketMaster 1.23.0 on 64bit iOS devices
+*/
+
+// Resolve the address of +[UIDevice isWonderful]
+var resolver = new ApiResolver('objc');
+var matches = resolver.enumerateMatchesSync(&quot;+[UIDevice isWonderful]&quot;);
+if (matches.length &gt; 0 ) {
+    // The address found, set a hook
+    Interceptor.attach(matches[0][&quot;address&quot;], {
+        onLeave: function(retval) {
+            // Always return 0
+            retval.replace(0);
+        }    
+    });
+    console.log(&quot;SUCCESS! +[UIDevice isWonderful] hooked!&quot;);
+} else {
+    // The address not found
+    console.log(&quot;ERROR! Can't find the address of +[UIDevice isWonderful]&quot;);
+}
+</code></pre>
+
+<p>With the script, we can run the TicketMaster on a jailbroken device. Just connect the iOS device to your Mac via USB and run in your Mac console:</p>
+
+<pre><code>$ frida -U --no-pause -f com.ticketmaster.ios.TicketmasterApp -l bypass_jb_tm.js
+</code></pre>
+
+<p>Of course, Frida must be installed on your Mac and iOS device, <code>bypass_jb_tm.js</code> must be in the current dir.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+	</content>
+
+	<footer>
+		© Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>
