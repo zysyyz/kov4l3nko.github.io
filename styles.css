@@ -4,7 +4,7 @@ html {
 	font-family: Georgia, serif;
 	max-width: 800px;
 	margin: auto;
-	/* font-size: 17px; */
+	font-size: 17px;
 	padding: 0 5px 5px 5px;
 }
 
@@ -93,7 +93,7 @@ blockquote {
 }
 
 .post-list-date {
-	display: inline-block;
+	/* display: inline-block; */
 	width: 105px;
 }
 
