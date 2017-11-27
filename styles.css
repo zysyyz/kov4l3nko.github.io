@@ -171,13 +171,8 @@ footer {
     border: none;
     outline: none;
     background-color: #ed6827;
-    color: white;
+    color: #fff;
     cursor: pointer;
     padding: 10px 15px 15px 15px;
 	font-size: 20px;
-}
-
-#scroll-btn:hover {
-	color: #fff;
-    background-color: #000;
 }
