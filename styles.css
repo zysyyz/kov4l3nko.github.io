@@ -7,6 +7,9 @@ body {
 	font-size: 17px;
 	padding: 0 5px 5px 5px;
 	-webkit-text-size-adjust: 100%;
+}
+
+ul {
 	list-style-type: square;
 }
 
