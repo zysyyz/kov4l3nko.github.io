@@ -7,6 +7,7 @@ body {
 	font-size: 17px;
 	padding: 0 5px 5px 5px;
 	-webkit-text-size-adjust: 100%;
+	list-style-type: square;
 }
 
 a {
@@ -153,6 +154,10 @@ footer {
 	
 	.blog-item-date-small {
 		display: inline;
+	}
+	
+	.blog-item {
+		list-style-type: square;
 	}
 }
 
