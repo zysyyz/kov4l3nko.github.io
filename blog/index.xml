@@ -7,10 +7,20 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>© Dima Kovalenko, 2012-2017</copyright>
-    <lastBuildDate>Sat, 11 Nov 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 02 Dec 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>My presentation on OWASP Kyiv Meetup Winter 2017</title>
+      <link>https://kov4l3nko.github.io/blog/2017-12-02-owasp-kyiv-winter-2017/</link>
+      <pubDate>Sat, 02 Dec 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2017-12-02-owasp-kyiv-winter-2017/</guid>
+      <description>In general, I don&amp;rsquo;t like conferences, especially big ones. Noise and many people make me nervous. However, from time to time I speak on small local meetups. Today I spoke on OWASP Kyiv Meetup about SSL pinning.
+ My presentaion in English (download PDF) YouTube (watch all meetup talks in one video, in Ukrainian/Russian)  </description>
+    </item>
     
     <item>
       <title>Bypassing TicketMaster 1.23.0 jailbreak detection</title>
