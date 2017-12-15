@@ -1,0 +1,502 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>
+		A brief  C/C&#43;&#43; how-to-start guide for jailbroken iOS devices - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">A brief  C/C&#43;&#43; how-to-start guide for jailbroken iOS devices</h1>
+		<div class="post-date">Dec 15, 2017</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#intro">Intro</a></li>
+<li><a href="#the-sandbox">The sandbox</a>
+<ul>
+<li><a href="#environment">Environment</a></li>
+<li><a href="#apple-certificate">Apple certificate</a></li>
+<li><a href="#self-signed-certificate">Self-signed certificate</a></li>
+</ul></li>
+<li><a href="#command-line-tool">Command line tool</a>
+<ul>
+<li><a href="#xcode-project">XCode project</a></li>
+<li><a href="#compilation-for-ios-from-command-line-or-makefile">Compilation for iOS from command line or Makefile</a></li>
+</ul></li>
+<li><a href="#dylib">DYLIB</a>
+<ul>
+<li><a href="#xcode-project-1">XCode project</a></li>
+<li><a href="#the-test-function-skeleton">The <code>test(..)</code> function skeleton</a></li>
+<li><a href="#loading-a-lib-with-lldb">Loading a lib with LLDB</a></li>
+</ul></li>
+<li><a href="#links">Links</a></li>
+</ul>
+</nav>
+		
+		
+
+<h1 id="intro">Intro</h1>
+
+<p>Here we discuss some C/C++ programming basics for jailbroken iOS devices (on non-jailbroken devices, command line tools are not useful because iOS console is unavailable, DYLIBs are replicated with private frameworks). First, we write a command line tool, then a DYLIB.</p>
+
+<h1 id="the-sandbox">The sandbox</h1>
+
+<p>Let&rsquo;s prepare a sandbox to play in.</p>
+
+<h2 id="environment">Environment</h2>
+
+<p>We need the latest MacOS Sierra and XCode. Also, we need a jailbroken iOS device.</p>
+
+<p>This guide was tested with</p>
+
+<ol>
+<li>MacBook Air 2015, MacOS Sierra 10.12.4, XCode 8.3.2</li>
+<li>iPad mini 2 with iOS 9.0.2 + Pangu9 jailbreak</li>
+<li>iPad mini 2 with iOS 10.1.1 + Yalu jailbreak</li>
+</ol>
+
+<p><strong>Note!</strong> In fact, the way to create command line tools / DYLIBs for iOS, described below, is a hack. Therefore I can&rsquo;t guarantee it will work in your environment correctly.</p>
+
+<h2 id="apple-certificate">Apple certificate</h2>
+
+<p>To compile our DYLIBs in XCode and sing they with Apple-signed certificate, we need an Apple developer account.</p>
+
+<p>Login to XCode with an Apple ID and create an iOS developer certificate:</p>
+
+<ol>
+<li><p>Start XCode and choose &ldquo;Preferences&rdquo; from the main menu</p>
+
+<p><img src="settings.png" alt="" /></p></li>
+
+<li><p>Choose &ldquo;Account&rdquo;, then choose &ldquo;+&rdquo;, &ldquo;Add Apple ID&hellip;&rdquo;</p>
+
+<p><img src="account.png" alt="" /></p></li>
+
+<li><p>Type login/password and click &ldquo;Sign In&rdquo;</p>
+
+<p><img src="login.png" alt="" /></p></li>
+
+<li><p>Choose &ldquo;Manage Certificates&hellip;&rdquo;</p>
+
+<p><img src="manage_certs.png" alt="" /></p></li>
+
+<li><p>Then choose &ldquo;+&rdquo; and &ldquo;iOS Development&rdquo;. Wait&hellip;</p>
+
+<p><img src="add_ios_dev.png" alt="" /></p></li>
+
+<li><p>As result, the newly created certificate should appear in the list:</p>
+
+<p><img src="cert_list.png" alt="" /></p></li>
+</ol>
+
+<p><strong>Note!</strong> At the moment, it&rsquo;s not clear how to compile/sign command line tools for iOS with XCode &ldquo;right from the box&rdquo;. Maybe some unofficial &ldquo;extensions&rdquo; may help, e.g. <a href="http://iosopendev.com">iOSOpenDev</a>. ★</p>
+
+<h2 id="self-signed-certificate">Self-signed certificate</h2>
+
+<p>We compile a command line tool code with Makefile and sing the resulting binaries with a self-signed certificate. To generate the certificate, follow the instruction below.</p>
+
+<ol>
+<li><p>Start Keychain Access (the app comes with MacOS in <code>/Applications/Utilties/Keychain Access</code>), choose &ldquo;Keychain Access&rdquo;, &ldquo;Certificate Assistant&rdquo;, &ldquo;Create a Certificate&hellip;&rdquo;:</p>
+
+<p><img src="create_cert.png" alt="" /></p></li>
+
+<li><p>Name the certificate, e.g. &ldquo;codesign&rdquo;. Make sure the Identity Type is “Self Signed Root” and the Certificate Type is “Code Signing”. We don’t need to check the “Let me override defaults” unless we want to change other properties on the certificate (name, email, etc). Choose &ldquo;Create&rdquo;, &ldquo;Continue&rdquo;, and &ldquo;Done&rdquo;:</p>
+
+<p><img src="create_cert1.png" alt="" />
+<img src="create_cert2.png" alt="" />
+<img src="create_cert3.png" alt="" /></p></li>
+
+<li><p>In MacOS terminal, run</p>
+
+<pre><code>$ security find-identity -pcodesigning
+</code></pre>
+
+<p>Check output, it should look like</p>
+
+<pre><code>Policy: Code Signing
+Matching identities
+    1) 34DD260923F78F59204C3282F99F3314EFDA7395 &quot;iPhone Developer: dm.o.kovalenko@gmail.com (6FU2JFWVAH)&quot;
+    2) BE79FC565230EBC907DB74E8219684104F0C8347 &quot;codesign&quot; (CSSMERR_TP_NOT_TRUSTED)
+       2 identities found
+
+Valid identities only
+1) 34DD260923F78F59204C3282F99F3314EFDA7395 &quot;iPhone Developer: dm.o.kovalenko@gmail.com (6FU2JFWVAH)&quot;
+  1 valid identities found            
+</code></pre>
+
+<p>Find our certificate by name (we named it &ldquo;codesign&rdquo;, remember?):
+​</p>
+
+<pre><code>BE79FC565230EBC907DB74E8219684104F0C8347 &quot;codesign&quot; (CSSMERR_TP_NOT_TRUSTED)            
+</code></pre></li>
+</ol>
+
+<p>Remember or write out the identity&rsquo;s 40 character hex string (here it&rsquo;s <code>BE79FC565230EBC907DB74E8219684104F0C8347</code>), we will need it for signing executables.</p>
+
+<h1 id="command-line-tool">Command line tool</h1>
+
+<p>A quick word about command line tools.</p>
+
+<h2 id="xcode-project">XCode project</h2>
+
+<p>Just create a command line tool XCode project:</p>
+
+<ol>
+<li>Start XCode, choose &ldquo;Create a new Xcode project&rdquo;:</li>
+</ol>
+
+<p><img src="new_project.png" alt="" /></p>
+
+<ol>
+<li>Choose &ldquo;macOS&rdquo; (there is no command line tool option for iOS, so we choose &ldquo;macOS&rdquo;), then choose &ldquo;Command Line Tool&rdquo; and click &ldquo;Next&rdquo;:<br /></li>
+</ol>
+
+<p><img src="choose_command_line.png" alt="" /></p>
+
+<ol>
+<li>Fill all fields on the next screen and click &ldquo;Next&rdquo;:</li>
+</ol>
+
+<p><img src="command_line_project.png" alt="" /></p>
+
+<ol>
+<li>Choose a project location and click &ldquo;Create&rdquo;:</li>
+</ol>
+
+<p><img src="cl_project_location.png" alt="" /></p>
+
+<ol>
+<li>Finally, we write C/C++ code with Xcode IDE.</li>
+</ol>
+
+<p><strong>Note!</strong> If the code (or, at least, some of it&rsquo;s parts) is not platform specific, we may consider testing it on MacOS, without iOS devices. ★</p>
+
+<h2 id="compilation-for-ios-from-command-line-or-makefile">Compilation for iOS from command line or Makefile</h2>
+
+<p><strong>Note!</strong> As it was noted above, at the moment, it&rsquo;s not clear how to compile/sign command line tools for iOS with XCode &ldquo;right from the box&rdquo;. Maybe some unofficial &ldquo;extensions&rdquo; may help, e.g. <a href="http://iosopendev.com">iOSOpenDev</a>. ★</p>
+
+<p>A minimal Makefile for sources containing single <code>main.c</code> file:</p>
+
+<pre><code># Path to GCC compiler
+GCC_BIN=`xcrun --sdk iphoneos --find gcc`
+
+# Path to iOS SDK (XCode must be installed)
+SDK=`xcrun --sdk iphoneos --show-sdk-path`
+
+# Arch. list (remove unnecessary arches)
+ARCH_FLAGS=-arch armv7 -arch armv7s -arch arm64
+
+# The identity's 40 character hex string (see above)
+CER=BE79FC565230EBC907DB74E8219684104F0C8347
+
+# Loader flags. Just remove/add unnecessary/neccessary -frameworks and -l (libs)
+LDFLAGS = \
+	-F$(SDK)/System/Library/Frameworks/\
+	-F$(SDK)/System/Library/PrivateFrameworks/\
+	-framework UIKit\
+	-framework CoreFoundation\
+	-framework Foundation\
+	-framework CoreGraphics\
+	-framework Security\
+	-lobjc\
+	-lsqlite3\
+	-bind_at_load
+
+# GCC compiler options for ARM
+GCC_ARM = $(GCC_BIN) -Os -Wimplicit -isysroot $(SDK) $(ARCH_FLAGS)
+
+# Compile mail.o -&gt; hellow (the final binary)
+default: main.o
+	@$(GCC_ARM) $(LDFLAGS) main.o -o hellow
+
+# Compile mail.c -&gt; main.o
+main.o: main.c
+	$(GCC_ARM) -c main.c
+
+# Sign the final binary with the certificate (see above)
+sign:
+	codesign -fs &quot;$(CER)&quot; hellow
+</code></pre>
+
+<p>If we see a warning(s) like this</p>
+
+<p><img src="sing_warn.png" alt="" /></p>
+
+<p>we just need to click &ldquo;Allow&rdquo; or, if we don&rsquo;t want to click &ldquo;Allow&rdquo; every time, choose &ldquo;Always Allow&rdquo;.</p>
+
+<p>To grant the binary some special permissions, we should create <code>entitlements.xml</code>. For example, to gran access to iOS keychine, an entitlements file may look like follows:</p>
+
+<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+	&lt;dict&gt;
+		&lt;key&gt;keychain-access-groups&lt;/key&gt;
+		&lt;array&gt;
+			&lt;string&gt;*&lt;/string&gt;
+		&lt;/array&gt;
+	&lt;/dict&gt;
+&lt;/plist&gt;
+</code></pre>
+
+<p>Then the sign section of Makefile will look like</p>
+
+<pre><code># Sign the final binary with the certificate (see above)
+sign:
+	codesign -fs &quot;$(CER)&quot; --entitlements entitlements.xml  hellow
+</code></pre>
+
+<p>Then we should just copy the signed binary to your iOS device, e.g. to <code>/usr/bin/</code>. Finally, ssh our iOS device and grant <code>x</code> permissions:</p>
+
+<pre><code>$ chmod a+x &lt;path_to_you_binary&gt;
+</code></pre>
+
+<p>e.g.</p>
+
+<pre><code>$ chmod a+x /usr/bin/hellow
+</code></pre>
+
+<h1 id="dylib">DYLIB</h1>
+
+<h2 id="xcode-project-1">XCode project</h2>
+
+<p>To create a project:</p>
+
+<ol>
+<li>Run XCode</li>
+<li>Choose &ldquo;Create a new XCode project&rdquo;</li>
+<li>Choose &ldquo;macOS&rdquo;, then &ldquo;Library&rdquo;, then click &ldquo;Next&rdquo;</li>
+<li>Set &ldquo;Framework&rdquo; to &ldquo;None (Plain C/C++ Library)&rdquo;, &ldquo;Type&rdquo; to &ldquo;Dynamic&rdquo;. Fill other fields with product/organization names and product identifier. Click &ldquo;Next&rdquo;</li>
+<li>Choose a folder to store the project and click &ldquo;Create&hellip;&rdquo;</li>
+</ol>
+
+<p>Now, customize the project:</p>
+
+<ol>
+<li>Click project root, then &ldquo;Build Settings&rdquo;, choose &ldquo;All&rdquo;, then change &ldquo;Base SDK&rdquo; to &ldquo;iOS 10.1&rdquo;</li>
+</ol>
+
+<p><img src="settings1.png" alt="" /></p>
+
+<ol>
+<li>Click project root, then &ldquo;General&rdquo;, then set &ldquo;Deployment target&rdquo; to a valid iOS version (it&rsquo;s 9.0 in our sandbox) and &ldquo;Device&rdquo; to &ldquo;Universal&rdquo;</li>
+</ol>
+
+<p><img src="settings2.png" alt="" /></p>
+
+<ol>
+<li>Also, if you see &ldquo;No account found&rdquo; here, click &ldquo;Add account&rdquo;:</li>
+</ol>
+
+<p><img src="account_dylib.png" alt="" /></p>
+
+<p>Then enter your Apple ID login/password and click &ldquo;Sign In&rdquo; button. Consider enabling &ldquo;Automatically manage signing&rdquo;. As result, the settings should looks like:</p>
+
+<p><img src="sign2.png" alt="" /></p>
+
+<ol>
+<li>Click the project name at the top and choose &ldquo;Generic iOS device&rdquo; scheme:</li>
+</ol>
+
+<p><img src="scheme1.png" alt="" /></p>
+
+<ol>
+<li>In the main menu, choose &ldquo;File&rdquo; =&gt; &ldquo;Project Settings&hellip;&rdquo;. Specify &ldquo;Derived Data&rdquo; as &ldquo;Project-relative Location&rdquo;.</li>
+</ol>
+
+<p>Now, you can build your DYLIB with XCode in a usual way.</p>
+
+<h2 id="the-test-function-skeleton">The <code>test(..)</code> function skeleton</h2>
+
+<p>Add C file and corresponding header to the project root:</p>
+
+<ol>
+<li>Open a context menu on the project root and choose &ldquo;New file&hellip;&rdquo; =&gt; &ldquo;C File&rdquo;. Click &ldquo;Next&rdquo;</li>
+<li>Specify C file&rsquo;s name, e.g. <code>protocatcher</code>. Make sure &ldquo;Also create a header file&rdquo; set. Click &ldquo;Next&rdquo;.</li>
+<li>Specify a files location and click &ldquo;Create&rdquo;</li>
+</ol>
+
+<p>Now, time to write a skeleton. We are going to hook <code>objc_msgSend(...)</code>, so add to <code>protocatcher.c</code>:</p>
+
+<pre><code>#include &quot;protocatcher.h&quot;
+
+EXPORT int test(id obj, SEL op) {
+	// Write something useful here, e.g. obj_msgSend hooks :)
+	return 0;    
+}
+</code></pre>
+
+<p>and to <code>protocatcher.h</code>:</p>
+
+<pre><code>#ifndef protocatcher_h
+#define protocatcher_h
+
+#include &lt;stdio.h&gt;
+#include &lt;objc/runtime.h&gt;
+#include &lt;objc/message.h&gt;
+
+// Symbolic name for visibility(&quot;default&quot;) attribute.
+#define EXPORT __attribute__((visibility(&quot;default&quot;)))
+
+EXPORT int test(id obj, SEL op);
+
+#endif /* protocatcher_h */
+</code></pre>
+
+<h2 id="loading-a-lib-with-lldb">Loading a lib with LLDB</h2>
+
+<p>To load the lib, just type in LLDB console:</p>
+
+<pre><code>expr (void)dlopen(&quot;/var/mobile/Containers/Bundle/Application/5EB17F26-965A-4B53-B927-62148DF0BDCE/Badoo.app/libprotocatcher.dylib&quot;,0x0002)
+</code></pre>
+
+<p>where</p>
+
+<ul>
+<li><code>/var/mobile/...blah-blah-blah.../libprotocatcher.dylib</code> is a full path to <code>libprotocatcher.dylib</code></li>
+<li><code>0x0002</code> means &ldquo;load now!&rdquo;</li>
+</ul>
+
+<h1 id="links">Links</h1>
+
+<ol>
+<li><a href="https://github.com/ptoomey3/Keychain-Dumper">Keychain Dumper on GitHub</a> (see README and Makefile)</li>
+</ol>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			
+				
+			
+			
+		
+			
+				
+				
+				
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+		
+		
+			Prev: <a href="https://kov4l3nko.github.io/blog/2017-12-02-owasp-kyiv-winter-2017/">My presentation on OWASP Kyiv Meetup Winter 2017</a>
+			<br>
+		
+		
+	</content>
+
+	<footer>
+		Copyright © Dima Kovalenko, 2012-2017
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

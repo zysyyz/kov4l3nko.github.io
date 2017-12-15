@@ -7,10 +7,22 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © Dima Kovalenko, 2012-2017</copyright>
-    <lastBuildDate>Sat, 02 Dec 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 15 Dec 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>A brief  C/C&#43;&#43; how-to-start guide for jailbroken iOS devices</title>
+      <link>https://kov4l3nko.github.io/blog/2017-12-15-jb-ios-coding-basics/</link>
+      <pubDate>Fri, 15 Dec 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2017-12-15-jb-ios-coding-basics/</guid>
+      <description>Intro Here we discuss some C/C++ programming basics for jailbroken iOS devices (on non-jailbroken devices, command line tools are not useful because iOS console is unavailable, DYLIBs are replicated with private frameworks). First, we write a command line tool, then a DYLIB.
+The sandbox Let&amp;rsquo;s prepare a sandbox to play in.
+Environment We need the latest MacOS Sierra and XCode. Also, we need a jailbroken iOS device.
+This guide was tested with</description>
+    </item>
     
     <item>
       <title>My presentation on OWASP Kyiv Meetup Winter 2017</title>
