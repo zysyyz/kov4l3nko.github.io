@@ -6,7 +6,7 @@
     <description>Recent content on @kov4l3nko</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <copyright>Copyright © Dima Kovalenko, 2012-2017</copyright>
+    <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
     <lastBuildDate>Fri, 15 Dec 2017 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/index.xml" rel="self" type="application/rss+xml" />
@@ -229,7 +229,7 @@ The Twitter client sent such requests after almost any action.</description>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://kov4l3nko.github.io/about/</guid>
-      <description>Contact me  Email: kov4l3nko@gmail.com (you can use my PGP public key) Twitter: @kov4l3nko GitHub: @kov4l3nko  About the blog I started blogging in 2012 on Google Blogger platform. That old blog is still alive, but not updated anymore. It contains several technical articles, but in general it&amp;rsquo;s not a technical blog. In 2013 I bought the codedigging.com domain and started a self-hosted technical blog about reverse engineering of mobile applications.</description>
+      <description>Email: kov4l3nko@gmail.com (you can use my PGP public key) Twitter: @kov4l3nko GitHub: @kov4l3nko  About the blog I started blogging in 2012 on Google Blogger platform. That old blog is still alive, but not updated anymore. It contains several technical articles, but in general it&amp;rsquo;s not a technical blog. In 2013 I bought the codedigging.com domain and started a self-hosted technical blog about reverse engineering of mobile applications. That blog was powered by Pelican and Disqus.</description>
     </item>
     
   </channel>
