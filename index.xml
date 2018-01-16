@@ -18,9 +18,10 @@
       <pubDate>Tue, 16 Jan 2018 00:00:00 +0000</pubDate>
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-16-debugging-machine-code-android/</guid>
-      <description>It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence: copy gdbserver from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB. If it&amp;rsquo;s enough for you, just stop reading this and start debugging. If you need more details, read the guide below :)
-Prerequisites This is what we need to start:
- A rooted Android device.</description>
+      <description>It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence:
+ Copy gdbserver from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB.
+ If it&amp;rsquo;s enough for you, just stop reading this and start debugging. If you need more details, read the guide below :)
+Prerequisites This is what we need to start:</description>
     </item>
     
     <item>
