@@ -1,0 +1,213 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>
+		Debugging third-party machine code in Android - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Debugging third-party machine code in Android</h1>
+		<div class="post-date">Jan 16, 2018</div>
+		
+		
+
+<p>It&rsquo;s a very simple guide, it can be &ldquo;compressed&rdquo; to a single sentence: <em>copy <code>gdbserver</code> from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB.</em> If it&rsquo;s enough for you, just stop reading this and start debugging. If you need more details, read the guide below :)</p>
+
+<h1 id="prerequisites">Prerequisites</h1>
+
+<p>This is what we need to start:</p>
+
+<ul>
+<li>A rooted Android device. To be more precisely, we need a device running Android of version 5 or higher. Also,
+
+<ul>
+<li>third party apps installation via USB must be enabled,</li>
+<li>BusyBox and SuperSU must be installed and work properly,</li>
+<li><code>adb shell su</code> must give us a root shell <code>#</code> .</li>
+</ul></li>
+</ul>
+
+<p>Other rooted Android features, e.g. running <code>adbd</code> on the device as root, are not really necessary.</p>
+
+<ul>
+<li>We need a Mac with the latest OS X.</li>
+</ul>
+
+<p><strong>Note!</strong> <code>gdb</code> and <code>gdbserver</code> are also available for Windows and Linux, so the guide (with some minor changes) is probably applicable to Windows and Linux as well. ★</p>
+
+<h1 id="preparations">Preparations</h1>
+
+<p>Preparations are easy, just three simple steps:</p>
+
+<ol>
+<li>First of all, we install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid&amp;hl=uk">SSHDroid</a> on the Android device, run the app, allow root access and test SSH connection from the Mac to the device after.</li>
+<li>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to find <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:
+<img src="gbdserver-location.png" alt="gbdserver-location" />
+E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK directory&gt;/prebuilt/android-amr64/gdbserver/gdbserver</code>.</li>
+<li>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We use <code>/data</code> because it writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with <em>&ldquo;adbd cannot run as root in production builds&rdquo;</em> message.</li>
+</ol>
+
+<p>That&rsquo;s it.</p>
+
+<h1 id="it-s-all-ready">It&rsquo;s all ready</h1>
+
+<p>Let&rsquo;s connect GDB to an Android demon:</p>
+
+<ol>
+<li><p>We connect the Mac and Android device to the same WiFi network</p></li>
+
+<li><p>On the Mac, we SSH the Android device and find the daemon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like</p></li>
+</ol>
+
+<p><img src="debugserver-start.png" alt="debugserver-start" /></p>
+
+<ol>
+<li>On the Mac, we should run <code>gdb</code> (it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</li>
+</ol>
+
+<p><img src="gdb-console.png" alt="gdb-console" /></p>
+
+<p>In the same way, we can debug native code from <code>.so</code> libs of running Android applications.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			
+				
+			
+			
+		
+			
+				
+				
+				
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+		
+		
+			Prev: <a href="https://kov4l3nko.github.io/blog/2017-12-15-jb-ios-coding-basics/">A brief  C/C&#43;&#43; how-to-start guide for jailbroken iOS devices</a>
+			<br>
+		
+		
+	</content>
+
+	<footer>
+		Copyright © Dima Kovalenko, 2012-2018
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

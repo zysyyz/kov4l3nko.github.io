@@ -7,10 +7,21 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
-    <lastBuildDate>Fri, 15 Dec 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 16 Jan 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Debugging third-party machine code in Android</title>
+      <link>https://kov4l3nko.github.io/blog/2018-01-16-debugging-machine-code-android/</link>
+      <pubDate>Tue, 16 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2018-01-16-debugging-machine-code-android/</guid>
+      <description>It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence: copy gdbserver from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB. If it&amp;rsquo;s enough for you, just stop reading this and start debugging. If you need more details, read the guide below :)
+Prerequisites This is what we need to start:
+ A rooted Android device.</description>
+    </item>
     
     <item>
       <title>A brief  C/C&#43;&#43; how-to-start guide for jailbroken iOS devices</title>
