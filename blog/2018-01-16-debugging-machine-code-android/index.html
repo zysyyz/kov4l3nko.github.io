@@ -77,7 +77,7 @@
 
 <p>E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK directory&gt;/prebuilt/android-amr64/gdbserver/gdbserver</code>.</p></li>
 
-<li><p>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We use <code>/data</code> because it writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with <em>&ldquo;adbd cannot run as root in production builds&rdquo;</em> message.</p></li>
+<li><p>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We place <code>gdbserver</code> under <code>/data</code> because <code>/data</code> is writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with &ldquo;adbd cannot run as root in production builds&rdquo; message.</p></li>
 </ol>
 
 <p>That&rsquo;s it.</p>
