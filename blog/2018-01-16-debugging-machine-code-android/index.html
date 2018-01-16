@@ -65,11 +65,15 @@
 <p>Preparations are easy, just three simple steps:</p>
 
 <ol>
-<li>First of all, we install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid&amp;hl=uk">SSHDroid</a> on the Android device, run the app, allow root access and test SSH connection from the Mac to the device after.</li>
-<li>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to find <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:
-<img src="gbdserver-location.png" alt="gbdserver-location" />
-E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK directory&gt;/prebuilt/android-amr64/gdbserver/gdbserver</code>.</li>
-<li>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We use <code>/data</code> because it writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with <em>&ldquo;adbd cannot run as root in production builds&rdquo;</em> message.</li>
+<li><p>First of all, we install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid&amp;hl=uk">SSHDroid</a> on the Android device, run the app, allow root access and test SSH connection from the Mac to the device after.</p></li>
+
+<li><p>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to find <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:</p>
+
+<p><img src="gbdserver-location.png" alt="gbdserver-location" /></p>
+
+<p>E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK directory&gt;/prebuilt/android-amr64/gdbserver/gdbserver</code>.</p></li>
+
+<li><p>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We use <code>/data</code> because it writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with <em>&ldquo;adbd cannot run as root in production builds&rdquo;</em> message.</p></li>
 </ol>
 
 <p>That&rsquo;s it.</p>
