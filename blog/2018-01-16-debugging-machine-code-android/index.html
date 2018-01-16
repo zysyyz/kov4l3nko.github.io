@@ -81,16 +81,14 @@ E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK d
 <ol>
 <li><p>We connect the Mac and Android device to the same WiFi network</p></li>
 
-<li><p>On the Mac, we SSH the Android device and find the daemon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like</p></li>
+<li><p>On the Mac, we SSH the Android device and find the daemon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like</p>
+
+<p><img src="debugserver-start.png" alt="debugserver-start" /></p></li>
+
+<li><p>On the Mac, we should run <code>gdb</code> (it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</p>
+
+<p><img src="gdb-console.png" alt="gdb-console" /></p></li>
 </ol>
-
-<p><img src="debugserver-start.png" alt="debugserver-start" /></p>
-
-<ol>
-<li>On the Mac, we should run <code>gdb</code> (it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</li>
-</ol>
-
-<p><img src="gdb-console.png" alt="gdb-console" /></p>
 
 <p>In the same way, we can debug native code from <code>.so</code> libs of running Android applications.</p>
 
