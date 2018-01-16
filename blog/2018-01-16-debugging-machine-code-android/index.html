@@ -70,7 +70,7 @@
 <ol>
 <li><p>First of all, we install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid&amp;hl=uk">SSHDroid</a> on the Android device, run the app, allow root access and test SSH connection from the Mac to the device.</p></li>
 
-<li><p>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to find <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:</p>
+<li><p>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to get <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:</p>
 
 <p><img src="gbdserver-location.png" alt="gbdserver-location" /></p>
 
@@ -83,14 +83,16 @@
 
 <h1 id="it-s-all-ready">It&rsquo;s all ready</h1>
 
-<p>Let&rsquo;s connect GDB to an Android demon:</p>
+<p>Let&rsquo;s connect GDB to an Android demon, for example, to <code>installd</code>:</p>
 
 <ol>
-<li><p>We connect the Mac and Android device to the same WiFi network</p></li>
+<li><p>Connect the Mac and Android device to the same WiFi network</p></li>
 
-<li><p>On the Mac, we SSH the Android device and find the daemon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like<img src="debugserver-start.png" alt="debugserver-start" /></p></li>
+<li><p>On the Mac, SSH the Android device and find the demon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like</p>
 
-<li><p>On the Mac, we should run <code>gdb</code> (it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</p>
+<p><img src="debugserver-start.png" alt="debugserver-start" /></p></li>
+
+<li><p>On the Mac, run <code>gdb</code> (on OS X, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</p>
 
 <p><img src="gdb-console.png" alt="gdb-console" /></p></li>
 </ol>
