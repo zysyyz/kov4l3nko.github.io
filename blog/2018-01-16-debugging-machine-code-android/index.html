@@ -54,13 +54,11 @@
 <ul>
 <li>BusyBox and SuperSU must be installed and work properly,</li>
 <li><code>adb shell su</code> must give us a root shell <code>#</code> .</li>
-</ul></li>
 </ul>
 
-<p>Other rooted Android features, e.g. running <code>adbd</code> on the device as root, are not really necessary.</p>
+<p>Other rooted Android features, e.g. running <code>adbd</code> on the device as root, are not really necessary.</p></li>
 
-<ul>
-<li>We need a Mac with the latest OS X.</li>
+<li><p>We need a Mac with the latest OS X.</p></li>
 </ul>
 
 <p><strong>Note!</strong> <code>gdb</code> and <code>gdbserver</code> are also available for Windows and Linux, so the guide (with some minor changes) is probably applicable to Windows and Linux as well. ★</p>
@@ -72,15 +70,13 @@
 <ol>
 <li><p>First of all, we install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid&amp;hl=uk">SSHDroid</a> on the Android device, run the app, allow root access and test SSH connection from the Mac to the device.</p></li>
 
-<li><p>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to find <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:</p></li>
-</ol>
+<li><p>Then, if the latest Android NDK is not installed on the Mac, we install it. We need it to find <code>gdbserver</code> for our Android CPU architecture and bitwise. Usually, it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;architecture and bitwise&gt;/gdbserver/</code>:</p>
 
 <p><img src="gbdserver-location.png" alt="gbdserver-location" /></p>
 
-<p>E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK directory&gt;/prebuilt/android-amr64/gdbserver/gdbserver</code>.</p>
+<p>E.g. for Android device with AMR64 processor, we choose  <code>&lt;Android NDK directory&gt;/prebuilt/android-amr64/gdbserver/gdbserver</code>.</p></li>
 
-<ol>
-<li>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We place <code>gdbserver</code> under <code>/data</code> because <code>/data</code> is writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with &ldquo;adbd cannot run as root in production builds&rdquo; message.</li>
+<li><p>Finally, we use <code>scp</code> to copy <code>gdbserver</code> to <code>/data/gdbserver/</code> on the Android device (if <code>/data/gdbserver/</code> does not exist, create it with SSH). We place <code>gdbserver</code> under <code>/data</code> because <code>/data</code> is writable on almost all Android devices, even if <code>adbd</code> does not run as root and <code>adb root</code> fails with &ldquo;adbd cannot run as root in production builds&rdquo; message.</p></li>
 </ol>
 
 <p>That&rsquo;s it.</p>
@@ -92,16 +88,12 @@
 <ol>
 <li><p>We connect the Mac and Android device to the same WiFi network</p></li>
 
-<li><p>On the Mac, we SSH the Android device and find the daemon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like</p></li>
+<li><p>On the Mac, we SSH the Android device and find the daemon we want to debug (for example, <code>installd</code>) with <code>ps</code> command, then go to <code>/data/gdbserver</code> and run <code>./gdbserver *:6666 --attach &lt;PID of installd&gt;</code>. In my console it looks like<img src="debugserver-start.png" alt="debugserver-start" /></p></li>
+
+<li><p>On the Mac, we should run <code>gdb</code> (it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</p>
+
+<p><img src="gdb-console.png" alt="gdb-console" /></p></li>
 </ol>
-
-<p><img src="debugserver-start.png" alt="debugserver-start" /></p>
-
-<ol>
-<li>On the Mac, we should run <code>gdb</code> (it&rsquo;s located in <code>&lt;Android NDK directory&gt;/prebuilt/darwin-x86_64/bin/gdb</code>) and execute <code>target remote &lt;the Android device IP&gt;:6666</code> in GDB console. As result, we get something similar to</li>
-</ol>
-
-<p><img src="gdb-console.png" alt="gdb-console" /></p>
 
 <p>In the same way, we can debug native code from <code>.so</code> libs of running Android applications.</p>
 
