@@ -1,10 +1,12 @@
 /* Common styles */
 
+@import url('https://fonts.googleapis.com/css?family=Merriweather:400,400i|Roboto+Mono:400,400i&subset=cyrillic');
+
 body {
-	font-family: Georgia, serif;
+	font-family: 'Merriweather', 'Geogria', sans-serif;
 	max-width: 800px;
 	margin: auto;
-	font-size: 17px;
+	font-size: 16px;
 	padding: 0 5px 5px 5px;
 	-webkit-text-size-adjust: 100%;
 }
@@ -19,21 +21,26 @@ a {
 }
 
 code {
-	font-size: 16px;
-	background-color: #eee;
+	font-size: 15px;
+	background-color: #fffff0;
 	border-radius: 2px;
-	padding: 0 2px 0 2px;
+	border: 1px solid #ccccc0;
+	padding: 0 3px 0 3px;
+	font-family: 'Roboto Mono', monospace;
 }
 
 pre {
-	background-color: #eee;
+	background-color: #fffff0;
+	border: 1px solid #ccccc0;
 	overflow: auto;
 	padding: 10px;
 	border-radius: 7px;
+	font-family: 'Roboto Mono', monospace;
 }
 
 pre code {
 	background-color: rgba(0, 0, 0, 0);
+	border: none;
 }
 
 a:hover {
