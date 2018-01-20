@@ -58,7 +58,7 @@
 
 <p>If it craches with an error or stucks on start, try to downgrade JDK on the Mac (see Tip #1 below for details). On my Mac, running OS X High Sierra 10.13.2, Android Device Monitor works with JDK 1.8.0_141 or lower; it fails with JDK &gt; 1.8.0_141. You can find old JDKs in <a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html">the Oracle archive</a> (Oracle account may be needed to download).</p>
 
-<p>Also, Android Device Monitor may not work properly because of the Android device you use. E.g. on my Meisu M5c it starts, but doesn&rsquo;t show apps (&ldquo;Devices&rdquo; and &ldquo;Threads&rdquo; tabs are empty), probably because of the error</p>
+<p>Also, Android Device Monitor may not work properly because of the Android device you use. E.g. on my Meizu M5c it starts, but doesn&rsquo;t show apps (&ldquo;Devices&rdquo; and &ldquo;Threads&rdquo; tabs are empty), probably because of the error</p>
 
 <pre><code>01-21 00:15:46.514: E/DeviceControl(949): can not open /sys/class/meizu/usb_thermal/sync_temp.
 </code></pre>
@@ -171,7 +171,7 @@ $ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src;
 
 <p><img src="ddms-skout.png" alt="" /></p></li>
 
-<li><p><strong>Run debugging</strong>. Switch back to Android Studio. In the main menu, click &ldquo;Run&rdquo; ➡ &ldquo;Debug &lsquo;Unnamed&rsquo;&rdquo; (&ldquo;Unnamed&rdquo; is the name of the remote configuration ypu created on step 4 above, remember?). As result, Android Studio must say</p>
+<li><p><strong>Run debugging</strong>. Switch back to Android Studio. In the main menu, click &ldquo;Run&rdquo; ➡ &ldquo;Debug &lsquo;Unnamed&rsquo;&rdquo; (here &ldquo;Unnamed&rdquo; is the name of the remote configuration we created on step 4 above, remember?). As result, Android Studio must say</p>
 
 <blockquote>
 <p>Connected to the target VM, address: &lsquo;localhost:8700&rsquo;, transport: &lsquo;socket&rsquo;</p>
