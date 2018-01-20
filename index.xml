@@ -7,10 +7,21 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
-    <lastBuildDate>Tue, 16 Jan 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 20 Jan 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Debugging third-party Android Java code on OS X</title>
+      <link>https://kov4l3nko.github.io/blog/2018-01-20-debugging-thirdparty-android-java-code/</link>
+      <pubDate>Sat, 20 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2018-01-20-debugging-thirdparty-android-java-code/</guid>
+      <description>There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d reccomend you to read it first, especially if you use Windows.
+In this blog post we are talking about similar things considering specificity of OS X.
+Prerequisites You need a Mac and an Android device with &amp;ldquo;USB debugging&amp;rdquo; options enabled. The device may be or may not be rooted, it doesn&amp;rsquo;t matter.</description>
+    </item>
     
     <item>
       <title>Debugging third-party machine code in Android</title>

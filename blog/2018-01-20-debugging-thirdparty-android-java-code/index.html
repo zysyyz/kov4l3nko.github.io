@@ -1,0 +1,317 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>
+		Debugging third-party Android Java code on OS X - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Debugging third-party Android Java code on OS X</h1>
+		<div class="post-date">Jan 20, 2018</div>
+		
+		
+
+<p>There is <a href="https://crosp.net/blog/android/android-reverse-engineering-debugging-smali-using-smalidea/">a very detailed article</a> from <a href="https://twitter.com/CR0SP">@CR0SP</a> about debugging third-party Android Java code on Windows. It&rsquo;s great and I&rsquo;d reccomend you to read it first, especially if you use Windows.</p>
+
+<p>In this blog post we are talking about similar things considering specificity of OS X.</p>
+
+<h1 id="prerequisites">Prerequisites</h1>
+
+<p>You need a Mac and an Android device with &ldquo;USB debugging&rdquo; options enabled. The device may be or may not be rooted, it doesn&rsquo;t matter.</p>
+
+<h1 id="preparations">Preparations</h1>
+
+<p>On the Mac,</p>
+
+<ol>
+<li><p>Install the latest <a href="https://developer.android.com/studio/index.html">Android Studio</a>. After installation, check Android Studio settings ➡ Appearance &amp; Behavior ➡ System Settings ➡ Android SDK ➡ SDK Tools ➡ Android SDK Platform Tools. The Android SDK Platform Tools must be installed.</p></li>
+
+<li><p>Make sure that Android Device Monitor (DDMS) works properly with your Android device. Run</p>
+
+<pre><code>$ ~/Library/Android/sdk/tools/monitor
+</code></pre>
+
+<p>If it craches with an error or stucks on start, try to downgrade JDK on the Mac (see Tip #1 below for details). On my Mac, running OS X High Sierra 10.13.2, Android Device Monitor works with JDK 1.8.0_141 or lower; it fails with JDK &gt; 1.8.0_141. You can find old JDKs in <a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html">the Oracle archive</a> (Oracle account may be needed to download).</p>
+
+<p>Also, Android Device Monitor may not work properly because of the Android device you use. E.g. on my Meisu M5c it starts, but doesn&rsquo;t show apps (&ldquo;Devices&rdquo; and &ldquo;Threads&rdquo; tabs are empty), probably because of the error</p>
+
+<pre><code>01-21 00:15:46.514: E/DeviceControl(949): can not open /sys/class/meizu/usb_thermal/sync_temp.
+</code></pre>
+
+<p>It&rsquo;s a device-specific error, at the moment I don&rsquo;t know how to fix it. So if you face something similar, try another Android device.</p></li>
+
+<li><p><a href="https://bitbucket.org/JesusFreke/smali/downloads/">Download the latest JAR&rsquo;s for smali and baksmali</a> and place to any suitable directory. Consider creating shell wrappers (see Tip #2 below for details).</p></li>
+
+<li><p><a href="https://bitbucket.org/JesusFreke/smali/downloads/">Download the latest smalidea archive</a> and install it to Android Studio (just follow <a href="https://github.com/JesusFreke/smali/wiki/smalidea">the instruction in &ldquo;Installation&rdquo; section</a>).</p></li>
+
+<li><p>Install 7zip (install <a href="https://brew.sh">Homebrew</a> and then run <code>brew install p7zip</code> in OS X Terminal).</p></li>
+</ol>
+
+<p>No need to prepare your Android device in some special way, just make sure it works with your Android device (see step 2 above).</p>
+
+<p><strong>Tip #1.</strong> If you want to remove the current version of JDK, you need to execute</p>
+
+<pre><code>$ /usr/libexec/java_home -V
+</code></pre>
+
+<p>It will print the JDK&rsquo;s home directory, e.g.</p>
+
+<pre><code>Matching Java Virtual Machines (1):
+    9.0.1, x86_64:	&quot;Java SE 9.0.1&quot;	/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/Contents/Home
+</code></pre>
+
+<p>Remove the JDK home directory (<code>/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/</code> in the example above). If it doesn&rsquo;t help, also remove</p>
+
+<pre><code>$ sudo rm -rf /Library/PreferencePanes/JavaControlPanel.prefPane
+$ sudo rm -rf /Library/Internet\ Plug-Ins/JavaAppletPlugin.plugin
+$ sudo rm -rf /Library/LaunchAgents/com.oracle.java.Java-Updater.plist
+$ sudo rm -rf /Library/PrivilegedHelperTools/com.oracle.java.JavaUpdateHelper
+$ sudo rm -rf /Library/LaunchDaemons/com.oracle.java.Helper-Tool.plist
+$ sudo rm -rf /Library/Preferences/com.oracle.java.Helper-Tool.plist
+</code></pre>
+
+<p>Done. ★</p>
+
+<p><strong>Tip #2.</strong> Consider adding the folder where you placed the smali/baksmali JAR&rsquo;s, to PATH, and creating simple shell script wrappers for the JAR&rsquo;s. Here is an example for <code>smali-2.2.2.jar</code>:</p>
+
+<pre><code>#!/bin/sh
+
+BASEDIR=$(dirname &quot;$0&quot;)
+java -jar &quot;$BASEDIR/smali-2.2.2.jar&quot; &quot;$@&quot;
+</code></pre>
+
+<p>So you just type <code>smali.sh</code> in Terminal, instead of annoying <code>java -jar &lt;path/to/&gt;smali-2.2.2.jar</code>. Anyway, further in the guide, I will use <code>smali.sh</code> and <code>baksmali.sh</code> wrappers for the JAR&rsquo;s. ★</p>
+
+<h1 id="how-to-debug-apk">How to debug APK</h1>
+
+<p>For example, let&rsquo;s debug Java code of <a href="https://play.google.com/store/apps/details?id=com.skout.android&amp;hl=uk">Skout</a>:</p>
+
+<ol>
+<li><p><strong>Get the original APK.</strong> For Skout (as well as for any app, installed from Google Play), we can just copy the APK from the Android device with <code>adb pull</code>:</p>
+
+<pre><code>$ adb pull /data/app/com.skout.android-1/base.apk ./
+$ mv base.apk com.skout.android-original.apk
+</code></pre></li>
+
+<li><p><strong>Baksmali DEX classes from the original APK.</strong> Just run on your Mac:</p>
+
+<pre><code>$ mkdir -p skout-for-debugging/smali-src
+$ 7z e com.skout.android-original.apk classes*.dex
+$ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src; done
+</code></pre></li>
+
+<li><p><strong>Create an Anroid Studio project.</strong> Run Android Studio and choose in the main menu: &ldquo;File&rdquo; ➡ &ldquo;New&rdquo; ➡ &ldquo;Import Project&rdquo;. Choose the <code>skout-for-debugging/</code> directory created at the previous step:</p>
+
+<p><img src="choose-skout-for-debugging.png" alt="" /></p>
+
+<p>Click &ldquo;Open&rdquo;. Then choose &ldquo;Create project from existing sources&rdquo;:</p>
+
+<p><img src="from-exist-src.png" alt="" /></p>
+
+<p>Click &ldquo;Next&rdquo;. On the next step, check if the &ldquo;Project location&rdquo; path is correct (it must point to your <code>skout-for-debugging/</code> directory):</p>
+
+<p><img src="loc.png" alt="" /></p>
+
+<p>Click &ldquo;Next&rdquo;. Wait while Android Studio is inspecting the directory, then make sure that <code>skout-for-debugging</code> directory is checked:</p>
+
+<p><img src="checked.png" alt="" /></p>
+
+<p>Click &ldquo;Next&rdquo;. Wait while Android Studio is looking for appropriate frameworks (<strong>spoiler</strong>: it will not find any). Get the message</p>
+
+<p><img src="no-frameworks-detected.png" alt="" /></p>
+
+<p>and click &ldquo;Finish&rdquo;. Wait while Android Studio is indexing files, then, in the left panel, choose &ldquo;Project ➡ Project Files&rdquo;:</p>
+
+<p><img src="project-files.png" alt="" /></p>
+
+<p>Mark the <code>skout-for-debugging/smali-src/</code> directory as the sources root:</p>
+
+<p><img src="src-root.png" alt="" /></p>
+
+<p>The Android Studio project created.</p></li>
+
+<li><p><strong>Create a remote configuration</strong>. In the main menu of Android Studio, click &ldquo;Run&rdquo; ➡ &ldquo;Edit Configurations&hellip;&rdquo; ➡ &ldquo;+&rdquo; ➡ &ldquo;Remote&rdquo;:</p>
+
+<p><img src="remote-conf.png" alt="" /></p>
+
+<p>On &ldquo;Configuration tab&rdquo;, change &ldquo;Port&rdquo; to <code>8700</code>:</p>
+
+<p><img src="port-8700.png" alt="" /></p>
+
+<p>Re-name the configuration, if you want (change the &ldquo;Name&rdquo; field). In this example, we will leave it &ldquo;Unnamed&rdquo;.</p>
+
+<p>Click &ldquo;OK&rdquo;.</p></li>
+
+<li><p><strong>It&rsquo;s time for Android Device Monitor</strong>. Connect your Android device to the Mac via USB, run the Skout app on your Android device, run Device Monitor on your Mac, and choose the app on the &ldquo;Devices&rdquo; tab:</p>
+
+<p><img src="ddms-skout.png" alt="" /></p></li>
+
+<li><p><strong>Run debugging</strong>. Switch back to Android Studio. In the main menu, click &ldquo;Run&rdquo; ➡ &ldquo;Debug &lsquo;Unnamed&rsquo;&rdquo; (&ldquo;Unnamed&rdquo; is the name of the remote configuration ypu created on step 4 above, remember?). As result, Android Studio must say</p>
+
+<blockquote>
+<p>Connected to the target VM, address: &lsquo;localhost:8700&rsquo;, transport: &lsquo;socket&rsquo;</p>
+</blockquote>
+
+<p>in its console:</p>
+
+<p><img src="connected.png" alt="" /></p>
+
+<p>Also, the app must be marked with a green bug icon in Android Device Monitor:</p>
+
+<p><img src="green-bug.png" alt="" /></p></li>
+</ol>
+
+<p><strong>Note!</strong> Alternatively, you can run Android Monitor <em>before</em> you create the remote configuration, look at the first port number</p>
+
+<p><img src="ddms-skout2.png" alt="" /></p>
+
+<p>and use it in the remote configuration instead of <code>8700</code>. ★</p>
+
+<p>Now you can set breakpoints in Dalvik code, trace Dalvik instructions, inspects registers etc.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			
+				
+			
+			
+		
+			
+				
+				
+				
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+		
+		
+			Prev: <a href="https://kov4l3nko.github.io/blog/2018-01-16-debugging-machine-code-android/">Debugging third-party machine code in Android</a>
+			<br>
+		
+		
+	</content>
+
+	<footer>
+		Copyright © Dima Kovalenko, 2012-2018
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>
