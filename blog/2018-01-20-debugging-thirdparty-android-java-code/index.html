@@ -72,9 +72,9 @@
 <li><p>Install 7zip (install <a href="https://brew.sh">Homebrew</a> and then run <code>brew install p7zip</code> in OS X Terminal).</p></li>
 </ol>
 
-<p>No need to prepare your Android device in some special way, just make sure it works with your Android device (see step 2 above).</p>
+<p>No need to prepare your Android device in some special way, just make sure it works with Android Device Monitor (see step 2 above).</p>
 
-<p><strong>Tip #1.</strong> If you want to remove the current version of JDK, you need to execute</p>
+<p><strong>Tip #1.</strong> If you want to remove the current version of JDK, run</p>
 
 <pre><code>$ /usr/libexec/java_home -V
 </code></pre>
@@ -112,13 +112,13 @@ java -jar &quot;$BASEDIR/smali-2.2.2.jar&quot; &quot;$@&quot;
 <p>For example, let&rsquo;s debug Java code of <a href="https://play.google.com/store/apps/details?id=com.skout.android&amp;hl=uk">Skout</a>:</p>
 
 <ol>
-<li><p><strong>Get the original APK.</strong> For Skout (as well as for any app, installed from Google Play), we can just copy the APK from the Android device with <code>adb pull</code>:</p>
+<li><p><strong>Get the original APK.</strong> For Skout (as well as for any app, installed from Google Play), you can just copy the APK from the Android device with <code>adb pull</code>:</p>
 
 <pre><code>$ adb pull /data/app/com.skout.android-1/base.apk ./
 $ mv base.apk com.skout.android-original.apk
 </code></pre></li>
 
-<li><p><strong>Baksmali DEX classes from the original APK.</strong> Just run on your Mac:</p>
+<li><p><strong>Baksmali DEX classes from the original APK.</strong> Run on your Mac:</p>
 
 <pre><code>$ mkdir -p skout-for-debugging/smali-src
 $ 7z e com.skout.android-original.apk classes*.dex
