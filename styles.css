@@ -1,6 +1,6 @@
 /* Common styles */
 
-@import url('https://fonts.googleapis.com/css?family=Merriweather:400,400i|Roboto+Mono:400,400i&subset=cyrillic');
+@import url('https://fonts.googleapis.com/css?family=Merriweather:400,400i,700,700i|Roboto+Mono&subset=cyrillic');
 
 body {
 	font-family: 'Merriweather', 'Geogria', sans-serif;
