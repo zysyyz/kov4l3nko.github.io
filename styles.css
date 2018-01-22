@@ -41,6 +41,7 @@ pre {
 pre code {
 	background-color: rgba(0, 0, 0, 0);
 	border: none;
+	padding: 0;
 }
 
 a:hover {
@@ -186,4 +187,5 @@ footer {
     cursor: pointer;
     padding: 10px 15px 15px 15px;
 	font-size: 20px;
+	border-radius: 5px;
 }
