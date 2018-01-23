@@ -1,0 +1,241 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>
+		Debugging third-party Android app code from the very beginning - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Debugging third-party Android app code from the very beginning</h1>
+		<div class="post-date">Jan 23, 2018</div>
+		
+		<p>This guide is a part of a series about third-party Android code debugging:</p>
+
+<ul>
+<li><a href="../2018-01-16-debugging-machine-code-android/">Debugging third-party machine code in Android</a></li>
+<li><a href="../2018-01-20-debugging-thirdparty-android-java-code/">Debugging third-party Android Java code on OS X</a></li>
+<li>Debugging third-party Android app code from the very beginning <em>(the guide you are reading now)</em></li>
+</ul>
+
+<p>In <a href="../2018-01-20-debugging-thirdparty-android-java-code/">the previous guide</a> about debugging third-party Android Java code, we</p>
+
+<ol>
+<li>run the app we want to debug,</li>
+<li>and then attach our debugger to the already running app.</li>
+</ol>
+
+<p>Acting in this way, we may miss a lot of interesting things, e.g. <code>onCreate(...)</code> method of the main activity. In this section, we consider a tricks for debugging Android applications from the very first Dalvik instruction.</p>
+
+<p>For this trick, you need an Android device with a console to run command line utils on the device (you can use <code>adb shell</code> or install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid">SSHDroid</a> and just ssh the device from your Mac). Also, &ldquo;USB debugging&rdquo; must be enabled on the device.</p>
+
+<p><strong>Note!</strong> If the trick does not work for you on a non-rooted Android device, try to root the device and run <code>am</code> as root (in <code>adb shell su</code> console or in an SSH consolse as root <code>#</code>). If root doesn&rsquo;t help&hellip; well, sorry, probably the best solution is to change the device/ROM and try again. ★</p>
+
+<p>The trick itself is very simple. Follow <a href="../2018-01-20-debugging-thirdparty-android-java-code/">the guide</a> (see the step-by-step instruction in &ldquo;How to debug APK&rdquo; section). On step 5, <em>&rdquo;&hellip;run the app on your Android device&hellip;&rdquo;</em>,</p>
+
+<ol>
+<li>Kill the app process on the device in the way you prefer, e.g. tap &ldquo;Settings&rdquo; ➡ &ldquo;Applications&rdquo; ➡ tap the app ➡ &ldquo;Force stop&rdquo;.</li>
+
+<li><p>Connect your Android device with <code>adb shell</code> or SSH and run</p>
+
+<pre><code>$ am start -W -D &lt;the application package&gt;/&lt;the application activity to start&gt;
+</code></pre>
+
+<p><strong>Note!</strong>. You can find the application package by executing in the Android device console:</p>
+
+<pre><code>$ pm list packages
+</code></pre>
+
+<p>To find the application activity, you can</p>
+
+<ul>
+<li><p>run the app by tapping its icon on the Android device, then execute in Android device console:</p>
+
+<pre><code>$ am stack list
+</code></pre>
+
+<p>it gives you a list of running apps activities. Find the right one and use it with the <code>am start -W -D</code> command line.</p></li>
+
+<li><p>&hellip;or, if <code>am</code> on your device doesn&rsquo;t support <code>stack list</code> option, just look at the decompiled Dalvik code and recognise the name of the main activity yourself. ★</p></li>
+</ul>
+
+<p>For example, the right <code>am start</code> command line for <a href="https://play.google.com/store/apps/details?id=com.skout.android">Skout</a> app is</p>
+
+<pre><code>$ am start -W -D com.skout.android/com.skout.android.activities.Skout
+</code></pre>
+
+<p>The resutl should look similar to</p>
+
+<p><img src="waiting-for-debugger.png" alt="" /></p></li>
+
+<li><p>Switch to Android Studio, find the main activity class and set breackpoints at</p>
+
+<pre><code>.method static constructor &lt;clinit&gt;()V
+.method public constructor &lt;init&gt;()V
+.method public onCreate(Landroid/os/Bundle;)V
+</code></pre>
+
+<p>For the Skout app, it looks like</p>
+
+<p><img src="breakpoints.png" alt="" /></p></li>
+</ol>
+
+<p>Then just keep following <a href="../2018-01-20-debugging-thirdparty-android-java-code/">the guide</a>. As soon as you run debugging on the step 6, your breakpoints hit and you can start debugging the app from the very first Dalvik instruction:</p>
+
+<p><img src="debug-skout-start.png" alt="" /></p>
+
+<p>In general, the good thing is we don&rsquo;t need to touch (patch/rebuild/resing) APK. The bad thing is the trick may need root to work.</p>
+
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>.</p>
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			
+				
+			
+			
+		
+			
+				
+				
+				
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+		
+		
+			Prev: <a href="https://kov4l3nko.github.io/blog/2018-01-21-justtrustme-android-ssl-pinning/">A quick word on Xposed &#43; JustTrustMe SSL certificate UN-pinning</a>
+			<br>
+		
+		
+	</content>
+
+	<footer>
+		Copyright © Dima Kovalenko, 2012-2018
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

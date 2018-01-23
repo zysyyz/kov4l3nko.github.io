@@ -36,6 +36,14 @@
 		
 		
 
+<p>This guide is a part of a series about third-party Android code debugging:</p>
+
+<ul>
+<li><a href="../2018-01-16-debugging-machine-code-android/">Debugging third-party machine code in Android</a></li>
+<li>Debugging third-party Android Java code on OS X <em>(the guide you are reading now)</em></li>
+<li><a href="../2018-01-23-debugging-android-apps-from-first-instruction">Debugging third-party Android app code from the very beginning</a></li>
+</ul>
+
 <p>There is <a href="https://crosp.net/blog/android/android-reverse-engineering-debugging-smali-using-smalidea/">a very detailed article</a> from <a href="https://twitter.com/CR0SP">@CR0SP</a> about debugging third-party Android Java code on Windows. It&rsquo;s great and I&rsquo;d reccomend you to read it first, especially if you use Windows.</p>
 
 <p>In this blog post we are talking about similar things considering specificity of OS X.</p>
@@ -162,7 +170,7 @@ $ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src;
 
 <p>Click &ldquo;OK&rdquo;.</p></li>
 
-<li><p><strong>It&rsquo;s time for Android Device Monitor</strong>. Connect your Android device to the Mac via USB, run the Skout app on your Android device, run Device Monitor on your Mac, and choose the app on the &ldquo;Devices&rdquo; tab:</p>
+<li><p><strong>It&rsquo;s time for Android Device Monitor</strong>. Connect your Android device to the Mac via USB, run the app on your Android device, run Device Monitor on your Mac, and choose the app on the &ldquo;Devices&rdquo; tab:</p>
 
 <p><img src="ddms-skout.png" alt="" /></p></li>
 
@@ -201,6 +209,13 @@ $ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src;
 		
 		
 		
+		
+			
+			
+			
+				
+				
+			
 		
 			
 			

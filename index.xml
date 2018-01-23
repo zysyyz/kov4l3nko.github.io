@@ -7,10 +7,21 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
-    <lastBuildDate>Sun, 21 Jan 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 23 Jan 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Debugging third-party Android app code from the very beginning</title>
+      <link>https://kov4l3nko.github.io/blog/2018-01-23-debugging-android-apps-from-first-instruction/</link>
+      <pubDate>Tue, 23 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2018-01-23-debugging-android-apps-from-first-instruction/</guid>
+      <description>This guide is a part of a series about third-party Android code debugging:
+ Debugging third-party machine code in Android Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning (the guide you are reading now)  In the previous guide about debugging third-party Android Java code, we
+ run the app we want to debug, and then attach our debugger to the already running app.</description>
+    </item>
     
     <item>
       <title>A quick word on Xposed &#43; JustTrustMe SSL certificate UN-pinning</title>
@@ -28,9 +39,8 @@
       <pubDate>Sat, 20 Jan 2018 00:00:00 +0000</pubDate>
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-20-debugging-thirdparty-android-java-code/</guid>
-      <description>There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d reccomend you to read it first, especially if you use Windows.
-In this blog post we are talking about similar things considering specificity of OS X.
-Prerequisites You need a Mac and an Android device with &amp;ldquo;USB debugging&amp;rdquo; options enabled. The device may be or may not be rooted, it doesn&amp;rsquo;t matter.</description>
+      <description>This guide is a part of a series about third-party Android code debugging:
+ Debugging third-party machine code in Android Debugging third-party Android Java code on OS X (the guide you are reading now) Debugging third-party Android app code from the very beginning  There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d reccomend you to read it first, especially if you use Windows.</description>
     </item>
     
     <item>
@@ -39,10 +49,9 @@ Prerequisites You need a Mac and an Android device with &amp;ldquo;USB debugging
       <pubDate>Tue, 16 Jan 2018 00:00:00 +0000</pubDate>
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-16-debugging-machine-code-android/</guid>
-      <description>It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence:
- Copy gdbserver from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB.
- If it&amp;rsquo;s enough for you, just stop reading this and start debugging. If you need more details, read the guide below :)
-Prerequisites This is what we need to start:</description>
+      <description>This guide is a part of a series about third-party Android code debugging:
+ Debugging third-party machine code in Android (the guide you are reading now) Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning  It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence:
+ Copy gdbserver from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB.</description>
     </item>
     
     <item>
@@ -263,7 +272,7 @@ The Twitter client sent such requests after almost any action.</description>
       
       <guid>https://kov4l3nko.github.io/about/</guid>
       <description>My contacts:
- Email: kov4l3nko@gmail.com (you can use my PGP public key) Twitter: @kov4l3nko GitHub: @kov4l3nko Skype, WhatsApp, iMessage, Viber, Signal, Telegram are shared on demand  A quick note on the blog Please do not take the blog seriously :) Here I share tutorials, talks and researches I did for fun. Most of my commercial researches are private and can&amp;rsquo;t be shared because of agreements with the customers, so I usually do not post serious things to the blog.</description>
+ Email: kov4l3nko@gmail.com (you can use my PGP public key) Twitter: @kov4l3nko GitHub: @kov4l3nko  A quick note on the blog Please do not take the blog seriously :) Here I share tutorials, talks and researches I did for fun. Most of my commercial researches are private and can&amp;rsquo;t be shared because of agreements with the customers, so I usually do not post serious things to the blog.</description>
     </item>
     
   </channel>
