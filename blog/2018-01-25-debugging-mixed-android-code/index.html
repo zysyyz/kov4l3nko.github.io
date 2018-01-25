@@ -1,0 +1,493 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>
+		Debugging Android third-party Java apps with native methods - @kov4l3nko
+	</title>
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+	
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Debugging Android third-party Java apps with native methods</h1>
+		<div class="post-date">Jan 25, 2018</div>
+		
+		
+
+<p>This guide is the last part of the series about third-party Android code debugging:</p>
+
+<ul>
+<li><a href="../2018-01-16-debugging-machine-code-android/">Debugging third-party machine code in Android</a></li>
+<li><a href="../2018-01-20-debugging-thirdparty-android-java-code/">Debugging third-party Android Java code on OS X</a></li>
+<li><a href="../2018-01-23-debugging-android-apps-from-first-instruction/">Debugging third-party Android app code from the very beginning</a></li>
+<li>Debugging Android third-party Java apps with native methods <em>(the guide you are reading now)</em></li>
+</ul>
+
+<h1 id="prerequisites">Prerequisites</h1>
+
+<p>Check your Android device:</p>
+
+<ol>
+<li>The device is rooted.</li>
+<li>You have access to Android console as root (with <code>adb shell su</code> or via SSH with <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid">SSHDroid</a>).</li>
+<li>SuperSU may be needed to allow <code>gdbserver</code> and/or SSHDroid run as root (it depends on the device/ROM).</li>
+
+<li><p><code>gdbserver</code> for the Android device CPU arch is copied to <code>/data/gdbserver/</code>. Usually, the proper <code>gdbserver</code> for your arch is under</p>
+
+<pre><code>&lt;Android NDK directory&gt;/prebuilt/android-&lt;Android device CPU arch&gt;/gdbserver/
+</code></pre>
+
+<p>e.g.</p>
+
+<p><img src="gbdserver-location.png" alt="gbdserver-location" /></p></li>
+
+<li><p>&ldquo;USB debugging&rdquo; is enabled</p></li>
+</ol>
+
+<p><strong>Note!</strong> Most probably, you need one more step. Create a dedicated local directory on your Mac and copy <code>/system/lib</code> (<code>/system/lib64</code> for 64-bit devices) from your Android device to the dedicated directory. In other words, make a local copy of Android <code>/system/lib</code> on your Mac. ★</p>
+
+<p>Check your Mac:</p>
+
+<ol>
+<li><a href="https://developer.android.com/studio/index.html">Android Studio</a> installed.</li>
+<li>Android SDK Platform Tools installed. To check and install it if needed, go to Android Studio settings ➡ &ldquo;Appearance &amp; Behavior&rdquo; ➡ &ldquo;System Settings&rdquo; ➡ &ldquo;Android SDK&rdquo; ➡ &ldquo;SDK Tools&rdquo; ➡ &ldquo;Android SDK Platform Tools&rdquo;.</li>
+
+<li><p>Android Device Monitor (aka DDMS) works properly. To check it, run</p>
+
+<pre><code>$ ~/Library/Android/sdk/tools/monitor
+</code></pre>
+
+<p>If it does not run or stucks after start, downgrade JDK. To remove the current JDK, exec</p>
+
+<pre><code>$ /usr/libexec/java_home -V
+</code></pre>
+
+<p>It will print the JDK&rsquo;s home directory, e.g.</p>
+
+<pre><code>Matching Java Virtual Machines (1):
+    9.0.1, x86_64:  &quot;Java SE 9.0.1&quot; /Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/Contents/Home
+</code></pre>
+
+<p>Remove the JDK home directory (e.g. <code>/Library/Java/JavaVirtualMachines/jdk-9.0.1.jdk/</code>). If it doesn&rsquo;t help, also remove</p>
+
+<pre><code>$ sudo rm -rf /Library/PreferencePanes/JavaControlPanel.prefPane
+$ sudo rm -rf /Library/Internet\ Plug-Ins/JavaAppletPlugin.plugin
+$ sudo rm -rf /Library/LaunchAgents/com.oracle.java.Java-Updater.plist
+$ sudo rm -rf /Library/PrivilegedHelperTools/com.oracle.java.JavaUpdateHelper
+$ sudo rm -rf /Library/LaunchDaemons/com.oracle.java.Helper-Tool.plist
+$ sudo rm -rf /Library/Preferences/com.oracle.java.Helper-Tool.plist
+</code></pre>
+
+<p>Old JDKs are in <a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html">the Oracle archive</a> (Oracle account is needed to download). At the moment, Android Device Monitor works with OS X High Sierra 10.13.2 and JDK 1.8.0_141, but it may be changed in the future.</p></li>
+
+<li><p>The latest smalidea archive <a href="https://bitbucket.org/JesusFreke/smali/downloads/">downloaded</a> and installed to Android Studio according to <a href="https://github.com/JesusFreke/smali/wiki/smalidea">the instruction in &ldquo;Installation&rdquo; section</a>.</p></li>
+
+<li><p>The latest JAR&rsquo;s for smali and baksmali <a href="https://bitbucket.org/JesusFreke/smali/downloads/">downloaded</a> and placed to any suitable directory.</p></li>
+
+<li><p>7zip installed (the simplest was is to install <a href="https://brew.sh">Homebrew</a> and then run <code>brew install p7zip</code> in OS X Terminal).</p></li>
+
+<li><p>The latest <a href="https://developer.android.com/ndk/index.html">Android NDK</a> installed</p></li>
+
+<li><p>A disassembler, to disassemble/analyse your native code, installed (I work with Thumb/ARM/ARM64/x86_64 in ELF, so I use <a href="https://hopperapp.com">Hopper</a>)</p></li>
+</ol>
+
+<p><strong>Recommendation!</strong> Two things to keep it simple:</p>
+
+<ul>
+<li><p>Cover smali and baksmali JAR with shell scripts, e.g.</p>
+
+<pre><code>#!/bin/sh
+
+# It's a smali.sh
+        
+BASEDIR=$(dirname &quot;$0&quot;)
+java -jar &quot;$BASEDIR/smali-2.2.2.jar&quot; &quot;$@&quot;
+</code></pre>
+
+<pre><code>#!/bin/sh
+
+# It's a baksmali.sh
+    
+BASEDIR=$(dirname &quot;$0&quot;)
+java -jar &quot;$BASEDIR/baksmali-2.2.2.jar&quot; &quot;$@&quot;
+</code></pre>
+
+<p>This allows you to use <code>backsmali.sh ...</code> instead of <code>java -jar path/to/baksmali-2.2.2.jar ...</code>. In this guide I&rsquo;ll use <code>backsmali.sh</code> whatever possible.</p></li>
+
+<li><p>Add to <code>~/.bash_profile</code>:</p>
+
+<pre><code># Android platform tools
+PATH=$PATH:~/Library/Android/sdk/platform-tools/
+    
+# The folder contains smali/baksmali JAR's and cover shell scripts
+PATH=$PATH:~/researches/_tools/smali/
+    
+# Android Device Monitor (DDMS)
+PATH=$PATH:~/Library/Android/sdk/tools/
+
+# Path to gdb
+PATH=$PATH:~/android-ndk-r16b/prebuilt/darwin-x86_64/bin/
+</code></pre></li>
+</ul>
+
+<p>No need to explain why this makes your life eqsier :) ★</p>
+
+<h2 id="preparations">Preparations</h2>
+
+<p>The main idea is to use two debuggers side by side:</p>
+
+<ul>
+<li>Android Studio debugger to debug Smali</li>
+<li>GDB to debug native code</li>
+</ul>
+
+<p>Consider <a href="https://play.google.com/store/apps/details?id=com.skout.android">Skout</a> app as an example:</p>
+
+<ol>
+<li><p>Install the app from Google Play to your Android device and get the APK:</p>
+
+<pre><code>$ adb pull /data/app/com.skout.android-1/base.apk ./
+$ mv base.apk com.skout.android-original.apk
+</code></pre></li>
+
+<li><p>Backsmali classes:</p>
+
+<pre><code>$ mkdir -p skout-for-debugging/smali-src
+$ 7z e com.skout.android-original.apk classes*.dex
+$ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src; done
+</code></pre></li>
+
+<li><p>Run Android Studio and choose in the main menu: &ldquo;File&rdquo; ➡ &ldquo;New&rdquo; ➡ &ldquo;Import Project&rdquo;. Choose the <code>skout-for-debugging/</code> directory created at the previous step:</p>
+
+<p><img src="choose-skout-for-debugging.png" alt="" /></p>
+
+<p>Click &ldquo;Open&rdquo;. Then choose &ldquo;Create project from existing sources&rdquo;:</p>
+
+<p><img src="from-exist-src.png" alt="" /></p>
+
+<p>Click &ldquo;Next&rdquo;. On the next step, check if the &ldquo;Project location&rdquo; path is correct (it must point to your <code>skout-for-debugging/</code> directory):</p>
+
+<p><img src="loc.png" alt="" /></p>
+
+<p>Click &ldquo;Next&rdquo;. Wait while Android Studio is inspecting the directory, then make sure that <code>skout-for-debugging</code> directory is checked:</p>
+
+<p><img src="checked.png" alt="" /></p>
+
+<p>Click &ldquo;Next&rdquo;. Wait while Android Studio is looking for appropriate frameworks (it will not find any). Get the message</p>
+
+<p><img src="no-frameworks-detected.png" alt="" /></p>
+
+<p>and click &ldquo;Finish&rdquo;. Wait while Android Studio is indexing files, then, in the left panel, choose &ldquo;Project ➡ Project Files&rdquo;:</p>
+
+<p><img src="project-files.png" alt="" /></p>
+
+<p>Mark the <code>skout-for-debugging/smali-src/</code> directory as the sources root:</p>
+
+<p><img src="src-root.png" alt="" /></p></li>
+
+<li><p>In the main menu of Android Studio, click &ldquo;Run&rdquo; ➡ &ldquo;Edit Configurations&hellip;&rdquo; ➡ &ldquo;+&rdquo; ➡ &ldquo;Remote&rdquo;:</p>
+
+<p><img src="remote-conf.png" alt="" /></p>
+
+<p>On &ldquo;Configuration tab&rdquo;, change &ldquo;Port&rdquo; to <code>8700</code>:</p>
+
+<p><img src="port-8700.png" alt="" /></p>
+
+<p>Click &ldquo;OK&rdquo;.</p></li>
+
+<li><p>Connect your Android device to the Mac via USB, open your Android device console (with <code>adb shell su</code> or SSHDroid as root <code>#</code>). Find the package of your app with <code>pm list packages</code>, e.g. for Skout</p>
+
+<pre><code>$ pm list packages | grep Skout
+</code></pre></li>
+
+<li><p>Find the main activity for the app. You can run the app as usual and use <code>am stack list</code> command to list activities</p>
+
+<pre><code>$ am stack list
+</code></pre>
+
+<p>If <code>am</code> does not support <code>stack list</code> option on your device/ROM, look at the decompiled Smali code (for Skout, the code is in <code>skout-for-debugging/smali-src/</code>) and find the main activity youself.</p></li>
+
+<li><p>Kill the app process, e.g. tap &ldquo;Settings&rdquo; ➡ &ldquo;Applications&rdquo; ➡ tap the app ➡ &ldquo;Force stop&rdquo;, or use <code>ps</code> and <code>kill</code> in the Android console.</p></li>
+
+<li><p>In the Android console, run</p>
+
+<pre><code>$ am start -W -D &lt;the application package&gt;/&lt;the application activity to start&gt;
+</code></pre>
+
+<p>E.g. for Skout:</p>
+
+<pre><code>$ am start -W -D com.skout.android/com.skout.android.activities.Skout
+</code></pre>
+
+<p>The resutl should look similar to</p>
+
+<p><img src="waiting-for-debugger.png" alt="" /></p></li>
+
+<li><p>Switch to Android Studio, find the main activity class and set breakpoints at</p>
+
+<pre><code>.method static constructor &lt;clinit&gt;()V
+.method public constructor &lt;init&gt;()V
+.method public onCreate(Landroid/os/Bundle;)V
+</code></pre>
+
+<p>For the Skout app, it looks like</p>
+
+<p><img src="breakpoints.png" alt="" /></p></li>
+
+<li><p>Run Device Monitor on the Mac, and select the app on the &ldquo;Devices&rdquo; tab:</p>
+
+<p><img src="ddms-skout.png" alt="" /></p>
+
+<p><strong>Note!</strong> Keep Android Device Monitor open until you finished debugging the app! Also, the app must be selected in Android Device Monitor while you are debugging the app! ★</p></li>
+
+<li><p>Switch back to Android Studio. In the main menu, click &ldquo;Run&rdquo; ➡ &ldquo;Debug &lsquo;Unnamed&rsquo;&rdquo;. As result, Android Studio must say</p>
+
+<blockquote>
+<p>Connected to the target VM, address: &lsquo;localhost:8700&rsquo;, transport: &lsquo;socket&rsquo;</p>
+</blockquote>
+
+<p>in its console:</p>
+
+<p><img src="connected.png" alt="" /></p>
+
+<p>Also, the app must be marked with a green bug icon in Android Device Monitor:</p>
+
+<p><img src="green-bug.png" alt="" /></p>
+
+<p><strong>Note!</strong> Alternatively, on step 4, you can specify an individual port instead of <code>8700</code>:</p>
+
+<p><img src="ddms-skout2.png" alt="" /></p>
+
+<p>In this case you don&rsquo;t need to keep Android Device Monitor open with the app selected. ★</p></li>
+
+<li><p>If you have a local copy of Android <code>/system/lib/</code> (see the note in the previous section), copy application <code>.so</code> libs from the Android device to the same local folder on your Mac (with <code>adb pull</code> or, if you use SSH, <code>scp</code>). For Skout, the libs are in <code>/data/data/com.skout.android/lib/</code>.</p></li>
+
+<li><p>In the Android device console, attach <code>gdbserver</code> to the Skout process:</p>
+
+<pre><code># gdbserver *:6666 --attach &lt;PID&gt;
+</code></pre>
+
+<p>where <code>&lt;PID&gt;</code> is the pid of the process (find it with <code>ps | grep Skout</code>).</p></li>
+
+<li><p>On the Mac, run <code>gdb</code> and execute the commands in GDB console:</p>
+
+<pre><code>(gdb) target remote &lt;Android device IP&gt;:6666
+(gdb) set solib-search-path path/to/the/local/copy/of/android/system/lib/on/your/Mac/
+(gdb) info sharedlibrary
+(gdb) c
+</code></pre>
+
+<p>e.g.</p>
+
+<p><img src="gdb-commands.png" alt="" /></p></li>
+
+<li><p>Research the Smali code, find native methods declaration and <code>loadLibrary</code> calls, e.g. with regular expressions:</p>
+
+<pre><code>$ cd skout-for-debugging/smali-src/
+$ grep -r . -e '.method[^\n]*native '
+$ grep -r . -e '-&gt;loadLibrary'
+</code></pre>
+
+<p>Breakpoint the <code>loadLibrary</code> and native method calls your are interested in.</p></li>
+
+<li><p>Use a disassembler on your Mac to research the native libraries you copied from the Android device to the local folder (see step 12), find the functions implementing the native methods you are interested in. Breakpoint the functions in GDB.</p></li>
+</ol>
+
+<p>Ready for debugging!</p>
+
+<p><strong>Note!</strong> If you do not create a local copy of <code>/system/lib/</code> (see the note in the previous subsection), you don&rsquo;t need step 12 and <code>set solib-search-path ...</code> GDB command on step 14. Hovewer, as result, you may get system/app libraries without any symbols. ★</p>
+
+<h2 id="how-to-debug">How to debug</h2>
+
+<p>The debugging is simple:</p>
+
+<ol>
+<li><p>Continue process in GDB console</p>
+
+<pre><code>(gdb) c
+</code></pre></li>
+
+<li><p>Continue process in Android Studio</p></li>
+
+<li><p>Some breakpoints in the main activity class hit. Now you are able to debug Smali code from the very beginning. You can set breakpoints in Android Studio, trace Dalvik instructions, inspect/change class fields etc:</p>
+
+<p><img src="inspect-change.png" alt="" /></p>
+
+<p>However, you can&rsquo;t see Smali registers <code>v0, v1, ...</code> and <code>p0, p1, ...</code> in &ldquo;Variables&rdquo;. To see a registes, use &ldquo;Evaluate expression&rdquo;:</p>
+
+<p><img src="evaluate-reg.png" alt="" /></p>
+
+<p>Even in this case, you&rsquo;re not able to change the register.</p></li>
+
+<li><p>Do something to triger native library loading and/or calling a native method you are interested in. As result, the breakpoint on the native method call in Smali code hits.</p></li>
+
+<li><p>Continue debugging in Android Studio, so the breakpoint on the corresponding function in native code hits in GDB. Now you can debug the native code with GDB.</p></li>
+</ol>
+
+<p><strong>Note!</strong> Android Studio debugging is frozen while you are debugging native code in GDB. So do not forget to continue executing native code with <code>(gdb) c</code> in GDB console. ★</p>
+
+<h1 id="links">Links</h1>
+
+<ul>
+<li><a href="https://packmad.github.io/gdb-android/">Debug Android native code with gdb</a></li>
+<li><a href="https://packmad.github.io/debug-smali/">Debug Android smali code (without repackaging)</a></li>
+<li><a href="https://crosp.net/blog/android/android-reverse-engineering-debugging-smali-using-smalidea/">Android Reverse Engineering: Debugging Smali in Smalidea</a></li>
+</ul>
+
+		
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>. Please, note that English is not my native language.
+			I'm sorry for mistakes/missprints, if any.</p>
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			
+				
+			
+			
+		
+			
+				
+				
+				
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+		
+		
+			Prev: <a href="https://kov4l3nko.github.io/blog/2018-01-23-debugging-android-apps-from-first-instruction/">Debugging third-party Android app code from the very beginning</a>
+			<br>
+		
+		
+	</content>
+
+	<footer>
+		Copyright © Dima Kovalenko, 2012-2018
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>

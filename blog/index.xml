@@ -7,10 +7,21 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
-    <lastBuildDate>Tue, 23 Jan 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 25 Jan 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Debugging Android third-party Java apps with native methods</title>
+      <link>https://kov4l3nko.github.io/blog/2018-01-25-debugging-mixed-android-code/</link>
+      <pubDate>Thu, 25 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2018-01-25-debugging-mixed-android-code/</guid>
+      <description>This guide is the last part of the series about third-party Android code debugging:
+ Debugging third-party machine code in Android Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning Debugging Android third-party Java apps with native methods (the guide you are reading now)  Prerequisites Check your Android device:
+ The device is rooted. You have access to Android console as root (with adb shell su or via SSH with SSHDroid).</description>
+    </item>
     
     <item>
       <title>Debugging third-party Android app code from the very beginning</title>
@@ -19,7 +30,7 @@
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-23-debugging-android-apps-from-first-instruction/</guid>
       <description>This guide is a part of the series about third-party Android code debugging:
- Debugging third-party machine code in Android Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning (the guide you are reading now)  In the previous guide about debugging third-party Android Java code, we
+ Debugging third-party machine code in Android Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning (the guide you are reading now) Debugging Android third-party Java apps with native methods  In the previous guide about debugging third-party Android Java code, we
  run the app we want to debug, and then attach our debugger to the already running app.</description>
     </item>
     
@@ -40,7 +51,7 @@
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-20-debugging-thirdparty-android-java-code/</guid>
       <description>This guide is a part of the series about third-party Android code debugging:
- Debugging third-party machine code in Android Debugging third-party Android Java code on OS X (the guide you are reading now) Debugging third-party Android app code from the very beginning  There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d reccomend you to read it first, especially if you use Windows.</description>
+ Debugging third-party machine code in Android Debugging third-party Android Java code on OS X (the guide you are reading now) Debugging third-party Android app code from the very beginning Debugging Android third-party Java apps with native methods  There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d reccomend you to read it first, especially if you use Windows.</description>
     </item>
     
     <item>
@@ -50,7 +61,7 @@
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-16-debugging-machine-code-android/</guid>
       <description>This guide is a part of the series about third-party Android code debugging:
- Debugging third-party machine code in Android (the guide you are reading now) Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning  It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence:
+ Debugging third-party machine code in Android (the guide you are reading now) Debugging third-party Android Java code on OS X Debugging third-party Android app code from the very beginning Debugging Android third-party Java apps with native methods  It&amp;rsquo;s a very simple guide, it can be &amp;ldquo;compressed&amp;rdquo; to a single sentence:
  Copy gdbserver from Android NDK to a rooted Android device via SSH, attach it to a running process and enjoy remote debugging with GDB.</description>
     </item>
     
