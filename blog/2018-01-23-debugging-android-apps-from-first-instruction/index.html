@@ -54,7 +54,7 @@
 
 <p>For this trick, you need an Android device with a console to run command line utils on the device (you can use <code>adb shell</code> or install <a href="https://play.google.com/store/apps/details?id=berserker.android.apps.sshdroid">SSHDroid</a> and just ssh the device from your Mac). Also, &ldquo;USB debugging&rdquo; must be enabled on the device.</p>
 
-<p><strong>Note!</strong> If the trick does not work for you on a non-rooted Android device, try to root the device and run <code>am</code> as root (in <code>adb shell su</code> console or in an SSH consolse as root <code>#</code>). If root doesn&rsquo;t help&hellip; well, sorry, probably the best solution is to change the device/ROM and try again. ★</p>
+<p><strong>Note!</strong> If the trick does not work for you on a non-rooted Android device, try to root the device and run <code>am</code> as root (in <code>adb shell su</code> console or in an SSH console as root <code>#</code>). If root doesn&rsquo;t help&hellip; well, sorry, probably the best solution is to change the device/ROM and try again. ★</p>
 
 <p>The trick itself is very simple. Follow <a href="../2018-01-20-debugging-thirdparty-android-java-code/">the guide</a> (see the step-by-step instruction in &ldquo;How to debug APK&rdquo; section). On step 5, <em>&rdquo;&hellip;run the app on your Android device&hellip;&rdquo;</em>,</p>
 
@@ -81,7 +81,7 @@
 
 <p>it gives you a list of running apps activities. Find the right one and use it with the <code>am start -W -D</code> command line.</p></li>
 
-<li><p>&hellip;or, if <code>am</code> on your device doesn&rsquo;t support <code>stack list</code> option, just look at the decompiled Dalvik code and recognise the name of the main activity yourself. ★</p></li>
+<li><p>&hellip;or, if <code>am</code> on your device doesn&rsquo;t support <code>stack list</code> option, just look at the decompiled Dalvik code and recognize the name of the main activity yourself. ★</p></li>
 </ul>
 
 <p>For example, the right <code>am start</code> command line for <a href="https://play.google.com/store/apps/details?id=com.skout.android">Skout</a> app is</p>
@@ -89,7 +89,7 @@
 <pre><code>$ am start -W -D com.skout.android/com.skout.android.activities.Skout
 </code></pre>
 
-<p>The resutl should look similar to</p>
+<p>The result should look similar to</p>
 
 <p><img src="waiting-for-debugger.png" alt="" /></p></li>
 
@@ -109,7 +109,7 @@
 
 <p><img src="debug-skout-start.png" alt="" /></p>
 
-<p>In general, the good thing is we don&rsquo;t need to touch (patch/rebuild/resing) APK. The bad thing is the trick may need root to work.</p>
+<p>In general, the good thing is we don&rsquo;t need to touch (patch/rebuild/resign) APK. The bad thing is the trick may need root to work.</p>
 
 		
 		<h1>Wanna say something?</h1>

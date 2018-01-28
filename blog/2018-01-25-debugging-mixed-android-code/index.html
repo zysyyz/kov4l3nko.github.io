@@ -110,7 +110,7 @@ $ sudo rm -rf /Library/Preferences/com.oracle.java.Helper-Tool.plist
 
 <li><p>The latest <a href="https://developer.android.com/ndk/index.html">Android NDK</a> installed</p></li>
 
-<li><p>Also, you need a disassembler to disassemble/analyse <code>.so</code> libraries from your Android device (e.g. my devices has CPUs with Thumb/ARM, ARM64, or x86_64 architecture, so I use <a href="https://hopperapp.com">Hopper</a> to disassemble <code>.so</code> libraries)</p></li>
+<li><p>Also, you need a disassembler to disassemble/analyse <code>.so</code> libraries from your Android device (e.g. my devices have CPUs with Thumb/ARM, ARM64, or x86_64 architecture, so I use <a href="https://hopperapp.com">Hopper</a> to disassemble <code>.so</code> libraries)</p></li>
 </ol>
 
 <p><strong>Recommendation!</strong> Two things to keep it simple:</p>
@@ -152,7 +152,7 @@ PATH=$PATH:~/android-ndk-r16b/prebuilt/darwin-x86_64/bin/
 </code></pre></li>
 </ul>
 
-<p>No need to explain why this makes your life eqsier :) ★</p>
+<p>No need to explain why this makes your life easier :) ★</p>
 
 <h2 id="preparations">Preparations</h2>
 
@@ -317,7 +317,7 @@ $ grep -r . -e '-&gt;loadLibrary'
 
 <p>Ready for debugging!</p>
 
-<p><strong>Note!</strong> If you do not create a local copy of <code>/system/lib/</code> (see the note in the previous subsection), you don&rsquo;t need step 12 and <code>set solib-search-path ...</code> GDB command on step 14. Hovewer, as result, you may get system/app libraries without any symbols. ★</p>
+<p><strong>Note!</strong> If you do not create a local copy of <code>/system/lib/</code> (see the note in the previous subsection), you don&rsquo;t need step 12 and <code>set solib-search-path ...</code> GDB command on step 14. However, as result, you may get system/app libraries without any symbols. ★</p>
 
 <h2 id="how-to-debug">How to debug</h2>
 
@@ -335,13 +335,13 @@ $ grep -r . -e '-&gt;loadLibrary'
 
 <p><img src="inspect-change.png" alt="" /></p>
 
-<p>However, you can&rsquo;t see Smali registers <code>v0, v1, ...</code> and <code>p0, p1, ...</code> in &ldquo;Variables&rdquo;. To see a registes, use &ldquo;Evaluate expression&rdquo;:</p>
+<p>However, you can&rsquo;t see Smali registers <code>v0, v1, ...</code> and <code>p0, p1, ...</code> in &ldquo;Variables&rdquo;. To see a registers, use &ldquo;Evaluate expression&rdquo;:</p>
 
 <p><img src="evaluate-reg.png" alt="" /></p>
 
 <p>Even in this case, you&rsquo;re not able to change the register.</p></li>
 
-<li><p>Do something to triger native library loading and/or calling a native method you are interested in. As result, the breakpoint on the native method call in Smali code hits.</p></li>
+<li><p>Do something to trigger native library loading and/or calling a native method you are interested in. As result, the breakpoint on the native method call in Smali code hits.</p></li>
 
 <li><p>Continue debugging in Android Studio, so the breakpoint on the corresponding function in native code hits in GDB. Now you can debug the native code with GDB.</p></li>
 </ol>

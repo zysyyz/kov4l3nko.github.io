@@ -41,7 +41,7 @@
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-21-justtrustme-android-ssl-pinning/</guid>
       <description>Suppose you have a third-party Android app and want to disable SSL pinning in the app. Just
- check if automatic tools, designed to disable SSL pinning, do the job; if they don&amp;rsquo;t, reverse the app code and disable SSL pinning yourself, or hire a reverse engineer to do the job for you.  Yes, it&amp;rsquo;s that simple ;) I&amp;rsquo;d reccomend you to start with XPosed framework and JustTrustMe. Here is a quick and not very detailed instruction for your Android device:</description>
+ check if automatic tools, designed to disable SSL pinning, do the job; if they don&amp;rsquo;t, reverse the app code and disable SSL pinning yourself, or hire a reverse engineer to do the job for you.  Yes, it&amp;rsquo;s that simple ;) I&amp;rsquo;d recommend you to start with XPosed framework and JustTrustMe. Here is a quick and not very detailed instruction for your Android device:</description>
     </item>
     
     <item>
@@ -51,7 +51,7 @@
       
       <guid>https://kov4l3nko.github.io/blog/2018-01-20-debugging-thirdparty-android-java-code/</guid>
       <description>This guide is a part of the series about third-party Android code debugging:
- Debugging third-party machine code in Android Debugging third-party Android Java code on OS X (the guide you are reading now) Debugging third-party Android app code from the very beginning Debugging Android third-party Java apps with native methods  There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d reccomend you to read it first, especially if you use Windows.</description>
+ Debugging third-party machine code in Android Debugging third-party Android Java code on OS X (the guide you are reading now) Debugging third-party Android app code from the very beginning Debugging Android third-party Java apps with native methods  There is a very detailed article from @CR0SP about debugging third-party Android Java code on Windows. It&amp;rsquo;s great and I&amp;rsquo;d recommend you to read it first, especially if you use Windows.</description>
     </item>
     
     <item>

@@ -45,7 +45,7 @@
 <li><a href="../2018-01-25-debugging-mixed-android-code/">Debugging Android third-party Java apps with native methods</a></li>
 </ul>
 
-<p>There is <a href="https://crosp.net/blog/android/android-reverse-engineering-debugging-smali-using-smalidea/">a very detailed article</a> from <a href="https://twitter.com/CR0SP">@CR0SP</a> about debugging third-party Android Java code on Windows. It&rsquo;s great and I&rsquo;d reccomend you to read it first, especially if you use Windows. Also, there is <a href="https://packmad.github.io/debug-smali/">another guide on debugging third-party Java code</a>, please read it as well.</p>
+<p>There is <a href="https://crosp.net/blog/android/android-reverse-engineering-debugging-smali-using-smalidea/">a very detailed article</a> from <a href="https://twitter.com/CR0SP">@CR0SP</a> about debugging third-party Android Java code on Windows. It&rsquo;s great and I&rsquo;d recommend you to read it first, especially if you use Windows. Also, there is <a href="https://packmad.github.io/debug-smali/">another guide on debugging third-party Java code</a>, please read it as well.</p>
 
 <p>In this blog post we are talking about similar things considering specificity of OS X.</p>
 
@@ -65,7 +65,7 @@
 <pre><code>$ ~/Library/Android/sdk/tools/monitor
 </code></pre>
 
-<p>If it craches with an error or stucks on start, try to downgrade JDK on the Mac (see Tip #1 below for details). On my Mac, running OS X High Sierra 10.13.2, Android Device Monitor works with JDK 1.8.0_141 or lower; it fails with JDK &gt; 1.8.0_141. You can find old JDKs in <a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html">the Oracle archive</a> (Oracle account may be needed to download).</p>
+<p>If it crashes with an error or stuck on start, try to downgrade JDK on the Mac (see Tip #1 below for details). On my Mac, running OS X High Sierra 10.13.2, Android Device Monitor works with JDK 1.8.0_141 or lower; it fails with JDK &gt; 1.8.0_141. You can find old JDKs in <a href="http://www.oracle.com/technetwork/java/javase/archive-139210.html">the Oracle archive</a> (Oracle account may be needed to download).</p>
 
 <p>Also, Android Device Monitor may not work properly because of the Android device you use. E.g. on my Meizu M5c it starts, but doesn&rsquo;t show apps (&ldquo;Devices&rdquo; and &ldquo;Threads&rdquo; tabs are empty). It looks like a device-specific problem, at the moment I don&rsquo;t know how to fix it without flashing the device with a custom ROM. So if you face something similar, try another Android device.</p></li>
 
