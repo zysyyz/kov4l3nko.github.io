@@ -108,6 +108,19 @@
 
 <p>In the same way, we can debug native code from <code>.so</code> libs of running Android applications.</p>
 
+<p><strong>Note!</strong> If you do not see symbols in loaded modules, try the following:</p>
+
+<ul>
+<li>Create a local directory on your Mac, e.g. <code>local_sys_copy</code> and copy <code>/system/lib</code> (<code>/system/lib64</code> for 64-bit devices) from your Android device to the local directory. If you debug a Java application with native methods, copy application&rsquo;s <code>.so</code> libraries to the local directory as well.</li>
+
+<li><p>In GDB console, run</p>
+
+<pre><code>(gdb) set solib-search-path path/to/your/local_sys_copy/
+</code></pre>
+
+<p>In most cases, GDB reads the <code>.so</code> libs from the local directories and loads the symbols, so you can set breakpoints on function names, find function addresses by names etc. ★</p></li>
+</ul>
+
 		
 		<h1>Wanna say something?</h1>
 		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>. Please, note that English is not my native language.
