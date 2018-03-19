@@ -56,6 +56,7 @@
 <p>Then run in your Mac console:</p>
 
 <pre><code>$ iproxy 6666 6666
+$ iproxy 2222 22
 </code></pre>
 
 <p>Finally, attach you iPhone to USB. That&rsquo;s it, we are ready to start.</p>
@@ -91,7 +92,7 @@ Listening to port 6666 for a connection from localhost...
 <pre><code>$ lldb
 </code></pre>
 
-<p>In LLDB command line, run</p>
+<p>In LLDB console, run</p>
 
 <pre><code>(lldb) platform select remote-ios
 (lldb) process connect connect://localhost:6666
@@ -123,7 +124,7 @@ Listening to port 6666 for a connection from localhost...
 <pre><code>$ lldb
 </code></pre>
 
-<p>In LLDB command line, run</p>
+<p>In LLDB console, run</p>
 
 <pre><code>(lldb) platform select remote-ios
 (lldb) process connect connect://localhost:6666
