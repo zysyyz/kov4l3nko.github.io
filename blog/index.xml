@@ -7,19 +7,19 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
-    <lastBuildDate>Sun, 18 Mar 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 25 May 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/blog/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>My experience with LLDB on Electra Jailbreak 1.0.4</title>
-      <link>https://kov4l3nko.github.io/blog/2018-03-18-my-experience-with-lldb-and-electra-jb/</link>
-      <pubDate>Sun, 18 Mar 2018 00:00:00 +0000</pubDate>
+      <title>My experience with LLDB on Electra Jailbreak 1.0.4 (second edition)</title>
+      <link>https://kov4l3nko.github.io/blog/2018-05-25-my-experience-with-lldb-and-electra-jb/</link>
+      <pubDate>Fri, 25 May 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://kov4l3nko.github.io/blog/2018-03-18-my-experience-with-lldb-and-electra-jb/</guid>
-      <description>I tried to google a short and clear instruction how to debug apps from AppStore on iOS devices jailbroken with Electra, with no success, so I wrote this guide. I tested it on iPhone 7 running iOS 11.1.2 with Electra jailbreak of version 1.0.4. I&amp;rsquo;m not sure it will work on any iOS device jailbroken with Electra.
-Debugging via USB For me, it works only if I do debugging via USB.</description>
+      <guid>https://kov4l3nko.github.io/blog/2018-05-25-my-experience-with-lldb-and-electra-jb/</guid>
+      <description>The first edition of this article was written on March 18, 2018. This is the second edition, with some important updates.
+ I tried to google a short and clear instruction how to debug apps from AppStore on iOS devices jailbroken with Electra. I did not found anything useful, so I wrote this guide. It works for me, but I&amp;rsquo;m not sure it works for your. I tested it on</description>
     </item>
     
     <item>
