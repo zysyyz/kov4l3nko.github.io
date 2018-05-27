@@ -6,11 +6,20 @@
     <description>Recent content on @kov4l3nko</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <copyright>Copyright © Dima Kovalenko, 2012-2018</copyright>
-    <lastBuildDate>Fri, 25 May 2018 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 27 May 2018 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://kov4l3nko.github.io/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Disabling SSL pinning by hooking SecTrustEvaluate(...) on iOS 11</title>
+      <link>https://kov4l3nko.github.io/blog/2018-05-27-sll-pinning-hook-sectrustevaluate/</link>
+      <pubDate>Sun, 27 May 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://kov4l3nko.github.io/blog/2018-05-27-sll-pinning-hook-sectrustevaluate/</guid>
+      <description>Motivation My motivation to start this research was simple. I wanted to see HTTPs traffic of Viber 8.9.0.7 on iOS 11.0.1 with Electra 1.0.4. I tried SSLKillSwitch2, but it didn&amp;rsquo;t disable SSL pinning. I have no idea why. Anyway, I did a research and wrote a simple script to disable SSL pinning in Viber by hooking just a single iOS Security framework function SecTrustEvaluate(...).
+How SecTrustEvaluate(...) works The function declaration is</description>
+    </item>
     
     <item>
       <title>My experience with LLDB on Electra Jailbreak 1.0.4 (second edition)</title>

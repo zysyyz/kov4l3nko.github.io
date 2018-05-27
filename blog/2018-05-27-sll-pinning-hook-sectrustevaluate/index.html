@@ -1,0 +1,307 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>Disabling SSL pinning by hooking SecTrustEvaluate(...) on iOS 11 - @kov4l3nko</title>
+	
+	<meta name="twitter:card" content="summary_large_image"></meta>
+	<meta name="twitter:site" content="@kov4l3nko"></meta>
+	<meta name="twitter:creator" content="@kov4l3nko"></meta>
+	<meta property="og:url" content="https://kov4l3nko.github.io/blog/2018-05-27-sll-pinning-hook-sectrustevaluate/"></meta>
+	<meta property="og:title" content="Disabling SSL pinning by hooking SecTrustEvaluate(...) on iOS 11"></meta>
+	<meta property="og:image" content="https://kov4l3nko.github.io/blog/2018-05-27-sll-pinning-hook-sectrustevaluate/title.jpg"></meta>
+
+	<link rel="stylesheet" type="text/css" href="https://kov4l3nko.github.io/styles.css">
+
+	
+
+</head>
+<body>
+	<header>
+		<div id="top">
+			<div id="blog-title">
+				<h1><a href="https://kov4l3nko.github.io/">@kov4l3nko</a></h1>
+			</div>
+			<div id="blog-menu">
+				<a href="https://kov4l3nko.github.io/">Blog</a>
+				
+					<a href="https://kov4l3nko.github.io/about/">About</a>&nbsp;
+				
+					<a href="https://twitter.com/kov4l3nko">Twitter</a>&nbsp;
+				
+					<a href="https://github.com/kov4l3nko">GitHub</a>&nbsp;
+				
+					<a href="https://kov4l3nko.github.io/blog/index.xml">RSS</a>&nbsp;
+				
+			</div>
+		</div>
+		<img id="blog-title-image" src="title.jpg">
+	</header>
+
+	<content>
+		<h1 class="post-title">Disabling SSL pinning by hooking SecTrustEvaluate(...) on iOS 11</h1>
+		<div class="post-date">May 27, 2018</div>
+		
+			<nav id="TableOfContents">
+<ul>
+<li><a href="#motivation">Motivation</a></li>
+<li><a href="#how-sectrustevaluate-works">How <code>SecTrustEvaluate(...)</code> works</a></li>
+<li><a href="#how-to-patch-sectrustevaluate">How to patch <code>SecTrustEvaluate(...)</code></a></li>
+<li><a href="#does-it-work-for-viber-only">Does it work for Viber only?</a></li>
+</ul>
+</nav>
+		
+		
+
+<h1 id="motivation">Motivation</h1>
+
+<p>My motivation to start this research was simple. I wanted to see HTTPs traffic of Viber 8.9.0.7 on iOS 11.0.1 with <a href="https://coolstar.org/electra/">Electra 1.0.4</a>. I tried <a href="https://github.com/nabla-c0d3/ssl-kill-switch2">SSLKillSwitch2</a>, but it didn&rsquo;t disable SSL pinning. I have no idea why. Anyway, I did a research and wrote a simple script to disable SSL pinning in Viber by hooking just a single iOS Security framework function <a href="https://developer.apple.com/documentation/security/1394363-sectrustevaluate?language=objc"><code>SecTrustEvaluate(...)</code></a>.</p>
+
+<h1 id="how-sectrustevaluate-works">How <code>SecTrustEvaluate(...)</code> works</h1>
+
+<p>The function declaration is</p>
+
+<pre><code>OSStatus SecTrustEvaluate(SecTrustRef trust, SecTrustResultType *result);
+</code></pre>
+
+<p>Here is the functions arguments according to <a href="https://developer.apple.com/documentation/security/1394363-sectrustevaluate?language=objc">Apple official docu</a>:</p>
+
+<ul>
+<li><p><code>trust</code> is a &ldquo;trust manager object&rdquo;. In fact, it&rsquo;s an ObjC object, containing information about certificates and check rules (policies). The object is usually created by <a href="https://developer.apple.com/documentation/security/1401555-sectrustcreatewithcertificates?language=objc"><code>SecTrustCreateWithCertificates(...)</code></a>.</p></li>
+
+<li><p><code>result</code> is a pointer to <code>SecTrustResultType</code> (which is actually <code>int</code>).</p></li>
+</ul>
+
+<p>The function evaluates the trust manager object: extract the certificates and check rules from the object, and check the certificates against the rules. If the check result is ok, the function writes <code>kSecTrustResultProceed (=1)</code> to <code>result</code> and returns <code>0</code> for success.</p>
+
+<h1 id="how-to-patch-sectrustevaluate">How to patch <code>SecTrustEvaluate(...)</code></h1>
+
+<p>I wrote a <a href="https://www.frida.re/">Frida</a> JS script. It patches <code>SecTrustEvaluate(...)</code>. As result, the patched function</p>
+
+<ul>
+<li>always writes <code>kSecTrustResultProceed (=1)</code> to <code>result</code>;</li>
+<li>always returns <code>0</code>.</li>
+</ul>
+
+<p>The script code:</p>
+
+<pre><code>/*
+	****************************************
+	 killSSL.js Frida script
+	 by Dima Kovalenko
+	****************************************
+	
+	Usage:
+		
+		1. Run Viber on the device
+		
+		2. Inject the script to the process:
+			$ frida -U -n Viber  -l killSSL.js
+		
+		3. SSL pinning in Viber HTTPs is
+		   disabled. Now you can intercept
+		   Viber HTTPs requests, e.g. with
+		   mitmproxy.
+*/
+
+
+// Are we debugging it?
+DEBUG = true;
+
+function main() {
+		
+	// Get SecTrustEvaluate address
+	var SecTrustEvaluate_prt = Module.findExportByName(&quot;Security&quot;, &quot;SecTrustEvaluate&quot;);
+	if (SecTrustEvaluate_prt == null) {
+		console.log(&quot;[!] Security!SecTrustEvaluate(...) not found!&quot;);
+		return;
+	}
+		
+	// Create native function wrappers for SecTrustEvaluate
+	var SecTrustEvaluate = new NativeFunction(SecTrustEvaluate_prt, &quot;int&quot;, [&quot;pointer&quot;, &quot;pointer&quot;]);
+	
+	// Hook SecTrustEvaluate
+	Interceptor.replace(SecTrustEvaluate_prt, new NativeCallback(function(trust, result) {
+		// Show &quot;hit!&quot; message if we are in debugging mode
+		if (DEBUG) console.log(&quot;[*] SecTrustEvaluate(...) hit!&quot;);
+		// Call original function
+		var osstatus = SecTrustEvaluate(trust, result);
+		// Change the result to kSecTrustResultProceed
+		Memory.writeU8(result, 1);
+		// Return errSecSuccess
+		return 0;
+	}, &quot;int&quot;, [&quot;pointer&quot;, &quot;pointer&quot;]));
+	// It's done!
+	console.log(&quot;[*] SecTrustEvaluate(...) hooked. SSL should be pinning disabled.&quot;);	
+}
+
+// Run the script
+main();
+</code></pre>
+
+<p>The result (some examples):</p>
+
+<p><img src="scrn1.png" alt="" /></p>
+
+<p><img src="scrn2.png" alt="" /></p>
+
+<p><img src="scrn3.png" alt="" /></p>
+
+<h1 id="does-it-work-for-viber-only">Does it work for Viber only?</h1>
+
+<p>I tested the script on iPhone 5s running iOS 11.0.1 with Electra 1.0.4. It worked for</p>
+
+<ul>
+<li>Viber 8.9.0.7</li>
+<li>Safari</li>
+</ul>
+
+<p>It didn&rsquo;t work for AppStore. I did not test it with other versions of Viber or iOS, with other apps, or on other devices. So I&rsquo;m not sure it will work for you.</p>
+
+<p><em>Anyway, if you wanna try, do it on your own risk. Stable and safe work of the script is not guaranteed.</em> Happy reversing! :)</p>
+
+		
+		<h1>Wanna say something?</h1>
+		<p>Commenting is not available in this blog, but you can <a href="https://kov4l3nko.github.io/about/">write me a letter or message</a>. Please, note that English is not my native language.
+			I'm sorry for mistakes/missprints, if any.</p>
+		
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+			
+			
+				
+			
+			
+		
+			
+				
+				
+				
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+			
+			
+			
+		
+		
+		
+			Prev: <a href="https://kov4l3nko.github.io/blog/2018-05-25-my-experience-with-lldb-and-electra-jb/">My experience with LLDB on Electra Jailbreak 1.0.4 (second edition)</a>
+			<br>
+		
+		
+	</content>
+
+	<footer>
+		Copyright © Dima Kovalenko, 2012-2018
+	</footer>
+	
+	<button onclick="topFunction()" id="scroll-btn" title="Go to top">▲</button>
+	
+	<script src="https://kov4l3nko.github.io/scripts.js"></script>
+	
+</body>
+</html>
