@@ -111,7 +111,11 @@
 $ cp /Volumes/DeveloperDiskImage/usr/bin/debugserver ./
 </code></pre>
 
-<p><strong>Note!</strong> <code>debugserver</code> is so-called &ldquo;universal binary&rdquo; with MachO fat header, it contains both ARM32 and ARM64 binaries, so don&rsquo;t care bitwise. ■</p>
+<hr />
+
+<p><strong>Note!</strong> <code>debugserver</code> is so-called &ldquo;universal binary&rdquo; with MachO fat header, it contains both ARM32 and ARM64 binaries, so don&rsquo;t care bitwise.</p>
+
+<hr />
 
 <p>Now you have <code>debugserver</code> binary in your current directory on your Mac.</p>
 
@@ -409,7 +413,11 @@ process connect connect://localhost:6666
 <li><code>backboard</code>: Launch program via BackBoard Services.</li>
 </ul>
 
-<p><strong>Note!</strong> Always use <code>backboard</code> to start iOS GUI applications! ■</p>
+<hr />
+
+<p><strong>Note!</strong> Always use <code>backboard</code> to start iOS GUI applications!</p>
+
+<hr />
 
 <p>Run LLDB on your Mac and connect <code>debugserver</code> via network</p>
 
@@ -438,7 +446,11 @@ process connect connect://localhost:6666
 
 <p>Now it&rsquo;s ready for debugging.</p>
 
-<p><strong>Note!</strong> One can add the commands to <code>.lldbinit</code>, but sometimes it does not work by unknown reasons. ■</p>
+<hr />
+
+<p><strong>Note!</strong> One can add the commands to <code>.lldbinit</code>, but sometimes it does not work by unknown reasons.</p>
+
+<hr />
 
 <h1 id="aslr">ASLR</h1>
 
@@ -498,7 +510,11 @@ Viber`___lldb_unnamed_function744$$Viber:
 
 <h2 id="removing-aslr">Removing ASLR</h2>
 
-<p><strong>Warning!</strong> This method can&rsquo;t be applied to any jailbroken device. It is not clear why, but some jailbroken devices do not start altered binaries (it&rsquo;s mostly about apps from AppStore). E.g. my iPhone 4 with iOS 7 runs patched binaries, my iPad mini 2 with iOS 9 does not. I did not dig that, it looks like it depends on a jailbreak. ■</p>
+<hr />
+
+<p><strong>Warning!</strong> This method can&rsquo;t be applied to any jailbroken device. It is not clear why, but some jailbroken devices do not start altered binaries (it&rsquo;s mostly about apps from AppStore). E.g. my iPhone 4 with iOS 7 runs patched binaries, my iPad mini 2 with iOS 9 does not. I did not dig that, it looks like it depends on a jailbreak.</p>
+
+<hr />
 
 <p>There are several steps:</p>
 
@@ -526,9 +542,13 @@ Viber`___lldb_unnamed_function744$$Viber:
 
 <p><img src="absd-no-aslr.png" alt="" /></p>
 
-<p><strong>Warning!</strong> If something goes wrong, e.g. the modified binary does not start, then try to follow the instruction above, but skip re-singing the binary! Sometimes it works. ■</p>
+<hr />
 
-<p><strong>Warning!</strong> Sometimes, a modified binary (without ASLR) won&rsquo;t start after device reboot. To solve this solution, copy the original (unmodified) binary to it&rsquo;s original place on the device, start it once, then kill the process. Finally, replace the original binary with the modified one, and start the modified one. Now the modified binary should start normally. ■</p>
+<p><strong>Warning!</strong> If something goes wrong, e.g. the modified binary does not start, then try to follow the instruction above, but skip re-singing the binary! Sometimes it works.</p>
+
+<p><strong>Warning!</strong> Sometimes, a modified binary (without ASLR) won&rsquo;t start after device reboot. To solve this solution, copy the original (unmodified) binary to it&rsquo;s original place on the device, start it once, then kill the process. Finally, replace the original binary with the modified one, and start the modified one. Now the modified binary should start normally.</p>
+
+<hr />
 
 <h1 id="using-a-decrypted-binary">Using a decrypted binary</h1>
 

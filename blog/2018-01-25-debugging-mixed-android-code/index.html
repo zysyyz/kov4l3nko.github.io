@@ -76,7 +76,11 @@
 <li><p>&ldquo;USB debugging&rdquo; is enabled</p></li>
 </ol>
 
-<p><strong>Note!</strong> Most probably, you need one more step. Create a dedicated local directory on your Mac and copy <code>/system/lib</code> (<code>/system/lib64</code> for 64-bit devices) from your Android device to the dedicated directory. In other words, make a local copy of Android <code>/system/lib</code> on your Mac. ★</p>
+<hr />
+
+<p><strong>Note!</strong> Most probably, you need one more step. Create a dedicated local directory on your Mac and copy <code>/system/lib</code> (<code>/system/lib64</code> for 64-bit devices) from your Android device to the dedicated directory. In other words, make a local copy of Android <code>/system/lib</code> on your Mac.</p>
+
+<hr />
 
 <p>Check your Mac:</p>
 
@@ -123,6 +127,8 @@ $ sudo rm -rf /Library/Preferences/com.oracle.java.Helper-Tool.plist
 <li><p>Also, you need a disassembler to disassemble/analyse <code>.so</code> libraries from your Android device (e.g. my devices have CPUs with Thumb/ARM, ARM64, or x86_64 architecture, so I use <a href="https://hopperapp.com">Hopper</a> to disassemble <code>.so</code> libraries)</p></li>
 </ol>
 
+<hr />
+
 <p><strong>Recommendation!</strong> Two things to keep it simple:</p>
 
 <ul>
@@ -162,7 +168,9 @@ PATH=$PATH:~/android-ndk-r16b/prebuilt/darwin-x86_64/bin/
 </code></pre></li>
 </ul>
 
-<p>No need to explain why this makes your life easier :) ★</p>
+<p>No need to explain why this makes your life easier :)</p>
+
+<hr />
 
 <h2 id="preparations">Preparations</h2>
 
@@ -270,7 +278,11 @@ $ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src;
 
 <p><img src="ddms-skout.png" alt="" /></p>
 
-<p><strong>Note!</strong> Keep Android Device Monitor open until you finished debugging the app! Also, the app must be selected in Android Device Monitor while you are debugging the app! ★</p></li>
+<hr />
+
+<p><strong>Note!</strong> Keep Android Device Monitor open until you finished debugging the app! Also, the app must be selected in Android Device Monitor while you are debugging the app!</p>
+
+<hr /></li>
 
 <li><p>Switch back to Android Studio. In the main menu, click &ldquo;Run&rdquo; ➡ &ldquo;Debug &lsquo;Unnamed&rsquo;&rdquo;. As result, Android Studio must say</p>
 
@@ -286,11 +298,15 @@ $ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src;
 
 <p><img src="green-bug.png" alt="" /></p>
 
+<hr />
+
 <p><strong>Note!</strong> Alternatively, on step 4, you can specify an individual port instead of <code>8700</code>:</p>
 
 <p><img src="ddms-skout2.png" alt="" /></p>
 
-<p>In this case you don&rsquo;t need to keep Android Device Monitor open with the app selected. ★</p></li>
+<p>In this case you don&rsquo;t need to keep Android Device Monitor open with the app selected.</p>
+
+<hr /></li>
 
 <li><p>If you have a local copy of Android <code>/system/lib/</code> (see the note in the previous section), copy application <code>.so</code> libs from the Android device to the same local folder on your Mac (with <code>adb pull</code> or, if you use SSH, <code>scp</code>). For Skout, the libs are in <code>/data/data/com.skout.android/lib/</code>.</p></li>
 
@@ -327,7 +343,11 @@ $ grep -r . -e '-&gt;loadLibrary'
 
 <p>Ready for debugging!</p>
 
-<p><strong>Note!</strong> If you do not create a local copy of <code>/system/lib/</code> (see the note in the previous subsection), you don&rsquo;t need step 12 and <code>set solib-search-path ...</code> GDB command on step 14. However, as result, you may get system/app libraries without any symbols. ★</p>
+<hr />
+
+<p><strong>Note!</strong> If you do not create a local copy of <code>/system/lib/</code> (see the note in the previous subsection), you don&rsquo;t need step 12 and <code>set solib-search-path ...</code> GDB command on step 14. However, as result, you may get system/app libraries without any symbols.</p>
+
+<hr />
 
 <h2 id="how-to-debug">How to debug</h2>
 
@@ -356,7 +376,11 @@ $ grep -r . -e '-&gt;loadLibrary'
 <li><p>Continue debugging in Android Studio, so the breakpoint on the corresponding function in native code hits in GDB. Now you can debug the native code with GDB.</p></li>
 </ol>
 
-<p><strong>Note!</strong> Android Studio debugging is frozen while you are debugging native code in GDB. So do not forget to continue executing native code with <code>(gdb) c</code> in GDB console. ★</p>
+<hr />
+
+<p><strong>Note!</strong> Android Studio debugging is frozen while you are debugging native code in GDB. So do not forget to continue executing native code with <code>(gdb) c</code> in GDB console.</p>
+
+<hr />
 
 <h1 id="links">Links</h1>
 

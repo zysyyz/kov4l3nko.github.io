@@ -125,9 +125,8 @@ Research Ok, lets do a quick research. Install the app from AppStore and decrypt
       
       <guid>https://kov4l3nko.github.io/blog/2016-07-05-error-based-image-format-from-apple/</guid>
       <description>The research is kind of a geek joke for reverse engineers, please don&amp;rsquo;t take it seriously.
-A quick word on Netpbm image formats Netpbm formats are quite old image formats developed in the 1980s. However, the latest Safari browsers (Safari 9.1.1 on Mac and MobileSafari on iOS 9.x) still support them.
-Here is a test example for your browser:
-If you see a small (24x7 pixels) &amp;ldquo;FEEP&amp;rdquo; above, your browser supports Netpbm formats.</description>
+A quick word on Netpbm image formats UPDATE from Dec 10, 2017: The PBM image is not visible in the latest desktop/mobile Safari anymore. Maybe they canceled PBM support (it would be a smart move, BTW).
+Netpbm formats are quite old image formats developed in the 1980s. However, the latest Safari browsers (Safari 9.</description>
     </item>
     
     <item>
@@ -179,9 +178,8 @@ The sandbox  Mac with the latest OS X installed MachOView 2.4 (9200) installed o
       <pubDate>Fri, 14 Aug 2015 00:00:00 +0000</pubDate>
       
       <guid>https://kov4l3nko.github.io/blog/2015-08-14-breakpoint-callbacks-in-python-lldb-scripting/</guid>
-      <description>Today we talk about breakpoint callbacks in LLDB Python scripts.Setting breakpoints is easy. For example, write the Python script:
-# This is test.py import lldb def test(debugger, command, result, internal_dict): &amp;quot;&amp;quot;&amp;quot; Just a test command to set a breakpoint &amp;quot;&amp;quot;&amp;quot; target = debugger.GetSelectedTarget() breakpoint = target.BreakpointCreateByName(&amp;quot;SSLWrite&amp;quot;) def __lldb_init_module(debugger, internal_dict): debugger.HandleCommand(&#39;command script add -f test.test test&#39;)  The scripts implements a command test. The command sets a breakpoint on SSLWrite.
-Name the file test.</description>
+      <description>Today we talk about breakpoint callbacks in LLDB Python scripts. Setting breakpoints is easy. For example, write the Python script:
+# This is test.py import lldb def test(debugger, command, result, internal_dict): &amp;quot;&amp;quot;&amp;quot; Just a test command to set a breakpoint &amp;quot;&amp;quot;&amp;quot; target = debugger.GetSelectedTarget() breakpoint = target.BreakpointCreateByName(&amp;quot;SSLWrite&amp;quot;) def __lldb_init_module(debugger, internal_dict): debugger.HandleCommand(&#39;command script add -f test.test test&#39;)  The scripts implements a command test. The command sets a breakpoint on SSLWrite.</description>
     </item>
     
     <item>

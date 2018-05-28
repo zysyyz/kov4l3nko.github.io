@@ -80,7 +80,11 @@
 <li><p>We need a Mac with the latest OS X.</p></li>
 </ul>
 
-<p><strong>Note!</strong> <code>gdb</code> and <code>gdbserver</code> are also available for Windows and Linux, so the guide (with some minor changes) is probably applicable to Windows and Linux as well. ★</p>
+<hr />
+
+<p><strong>Note!</strong> <code>gdb</code> and <code>gdbserver</code> are also available for Windows and Linux, so the guide (with some minor changes) is probably applicable to Windows and Linux as well.</p>
+
+<hr />
 
 <h1 id="preparations">Preparations</h1>
 
@@ -118,6 +122,8 @@
 
 <p>In the same way, we can debug native code from <code>.so</code> libs of running Android applications.</p>
 
+<hr />
+
 <p><strong>Note!</strong> If you do not see symbols in loaded modules, try the following:</p>
 
 <ul>
@@ -128,8 +134,10 @@
 <pre><code>(gdb) set solib-search-path path/to/your/local_sys_copy/
 </code></pre>
 
-<p>In most cases, GDB reads the <code>.so</code> libs from the local directories and loads the symbols, so you can set breakpoints on function names, find function addresses by names etc. ★</p></li>
+<p>In most cases, GDB reads the <code>.so</code> libs from the local directories and loads the symbols, so you can set breakpoints on function names, find function addresses by names etc.</p></li>
 </ul>
+
+<hr />
 
 		
 		<h1>Wanna say something?</h1>

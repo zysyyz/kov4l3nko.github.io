@@ -88,6 +88,8 @@
 
 <p>No need to prepare your Android device in some special way, just make sure it works with Android Device Monitor (see step 2 above).</p>
 
+<hr />
+
 <p><strong>Tip #1.</strong> If you want to remove the current version of JDK, run</p>
 
 <pre><code>$ /usr/libexec/java_home -V
@@ -109,7 +111,7 @@ $ sudo rm -rf /Library/LaunchDaemons/com.oracle.java.Helper-Tool.plist
 $ sudo rm -rf /Library/Preferences/com.oracle.java.Helper-Tool.plist
 </code></pre>
 
-<p>Done. ★</p>
+<p>Done.</p>
 
 <p><strong>Tip #2.</strong> Consider adding the folder where you placed the smali/baksmali JAR&rsquo;s, to PATH, and creating simple shell script wrappers for the JAR&rsquo;s. Here is an example for <code>smali-2.2.2.jar</code>:</p>
 
@@ -119,7 +121,9 @@ BASEDIR=$(dirname &quot;$0&quot;)
 java -jar &quot;$BASEDIR/smali-2.2.2.jar&quot; &quot;$@&quot;
 </code></pre>
 
-<p>So you just type <code>smali.sh</code> in Terminal, instead of annoying <code>java -jar &lt;path/to/&gt;smali-2.2.2.jar</code>. Anyway, further in the guide, I will use <code>smali.sh</code> and <code>baksmali.sh</code> wrappers for the JAR&rsquo;s. ★</p>
+<p>So you just type <code>smali.sh</code> in Terminal, instead of annoying <code>java -jar &lt;path/to/&gt;smali-2.2.2.jar</code>. Anyway, further in the guide, I will use <code>smali.sh</code> and <code>baksmali.sh</code> wrappers for the JAR&rsquo;s.</p>
+
+<hr />
 
 <h1 id="how-to-debug-apk">How to debug APK</h1>
 
@@ -200,11 +204,15 @@ $ for c in classes*.dex; do baksmali.sh d $c -o ./skout-for-debugging/smali-src;
 <p><img src="green-bug.png" alt="" /></p></li>
 </ol>
 
+<hr />
+
 <p><strong>Note!</strong> Alternatively, you can run Android Monitor <em>before</em> you create the remote configuration, look at the first port number</p>
 
 <p><img src="ddms-skout2.png" alt="" /></p>
 
-<p>and use it in the remote configuration instead of <code>8700</code>. ★</p>
+<p>and use it in the remote configuration instead of <code>8700</code>.</p>
+
+<hr />
 
 <p>Now you can set breakpoints in Dalvik code, trace Dalvik instructions, inspects registers etc.</p>
 
