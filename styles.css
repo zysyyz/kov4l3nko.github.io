@@ -138,6 +138,13 @@ footer {
 	font-size: 14px;
 }
 
+/* <hr> */
+hr {
+	border: 0;
+	height: 1px;
+	background: #ed6827;
+}
+
 /* Styles for small screens */
 
 @media (max-width: 750px) {
